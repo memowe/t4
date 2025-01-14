@@ -1,0 +1,36 @@
+cabal-version:        3.0
+name:                 terminal-time-tracking-tool
+version:              0.1.0.0
+license:              MIT
+license-file:         LICENSE
+author:               Mirko Westermeier
+maintainer:           mirko@westermeier.de
+build-type:           Simple
+
+common basics
+  default-language:   Haskell2010
+  ghc-options:        -Wall
+  build-depends:      base
+                    , brick
+
+library
+  import:             basics
+  exposed-modules:    MyLib
+  hs-source-dirs:     lib
+
+executable t4
+  import:             basics
+  build-depends:      terminal-time-tracking-tool
+  hs-source-dirs:     app
+  main-is:            App.hs
+
+test-suite t4-test
+  import:             basics
+  type:               exitcode-stdio-1.0
+  build-depends:      terminal-time-tracking-tool
+                    , hspec
+                    , QuickCheck
+  build-tool-depends: hspec-discover:hspec-discover
+  other-modules:      MyLibSpec
+  hs-source-dirs:     test
+  main-is:            run-all-tests.hs
