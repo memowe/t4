@@ -15,7 +15,7 @@ common basics
 
 library
   import:             basics
-  exposed-modules:    MyLib
+  exposed-modules:    T4
   hs-source-dirs:     lib
 
 executable t4
@@ -31,6 +31,6 @@ test-suite t4-test
                     , hspec
                     , QuickCheck
   build-tool-depends: hspec-discover:hspec-discover
-  other-modules:      MyLibSpec
+  other-modules:      T4Spec
   hs-source-dirs:     test
   main-is:            run-all-tests.hs
