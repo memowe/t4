@@ -9,13 +9,20 @@ build-type:           Simple
 
 common basics
   default-language:   Haskell2010
+  default-extensions: TemplateHaskell
+                    , OverloadedStrings
+                    , GeneralizedNewtypeDeriving
   ghc-options:        -Wall
   build-depends:      base
+                    , time
+                    , aeson
+                    , yaml
+                    , text
                     , brick
 
 library
   import:             basics
-  exposed-modules:    T4
+  exposed-modules:    T4.Data
   hs-source-dirs:     lib
 
 executable t4
@@ -26,11 +33,13 @@ executable t4
 
 test-suite t4-test
   import:             basics
+  ghc-options:        -Wno-orphans
   type:               exitcode-stdio-1.0
   build-depends:      terminal-time-tracking-tool
                     , hspec
                     , QuickCheck
+                    , quickcheck-instances
   build-tool-depends: hspec-discover:hspec-discover
-  other-modules:      T4Spec
+  other-modules:      T4.DataSpec
   hs-source-dirs:     test
   main-is:            run-all-tests.hs
