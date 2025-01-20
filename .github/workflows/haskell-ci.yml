@@ -12,10 +12,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        ghc-version: ['9.2', '9.4', '9.6', '9.8', '9.10', '9.12']
+        ghc-version: ['9.4']
     steps:
       - name: Checkout repository content
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up GHC ${{ matrix.ghc-version }}
         uses: haskell-actions/setup@v2
         id: setup
@@ -29,7 +29,7 @@ jobs:
           cabal build --dry-run
         # The last step generates dist-newstyle/cache/plan.json for the cache key
       - name: Restore cached dependencies
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         id: cache
         env:
           key: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-cabal-${{ steps.setup.outputs.cabal-version }}
@@ -46,7 +46,7 @@ jobs:
       - name: Build API docs
         run: cabal haddock --builddir=haddock_build --haddock-hyperlinked-source --haddock-html-location=https://hackage.haskell.org/package/$pkg-$version/docs
       - name: Save cached dependencies (build and haddock)
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         if: ${{ steps.cache.outputs.cache-primary-key != steps.cache.outputs.cache-matched-key }}
         with:
           path: ${{ steps.setup.outputs.cabal-store }}
@@ -54,7 +54,7 @@ jobs:
       - name: Collect generated API docs
         run: mv $(find haddock_build -wholename '*doc/html/terminal-time-tracking-tool' | head -n 1) haddock_html
       - name: Store generated API docs
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: haddock_html
 
@@ -71,4 +71,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deploy
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
