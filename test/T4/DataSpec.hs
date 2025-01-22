@@ -7,6 +7,7 @@ import Test.QuickCheck.Instances.Time ()
 
 import T4.Data
 import Data.Char
+import Data.List
 import Data.Text (unpack)
 import Text.Read (readMaybe)
 import Text.ParserCombinators.ReadP
@@ -56,6 +57,11 @@ spec = do
     prop "Read-write roundtrip" $ \clock ->
       let yaml = encode (clock :: Clock)
       in  decodeThrow yaml `shouldBe` Just clock
+
+  context "Clock log groups" $ do
+    let sameDay = (== 1) . length . group . map getDay
+    prop "Grouping in days" $ \clockLog ->
+      all sameDay (dayGroups clockLog)
 
 instance Read SimpleLocalTime where
   readsPrec _ = readP_to_S $ do

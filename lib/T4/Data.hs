@@ -2,6 +2,7 @@ module T4.Data where
 
 import Data.Char
 import qualified Data.Text as T
+import Data.List.Extra
 import Data.Time
 import Data.Aeson
 import Data.Aeson.TH
@@ -41,3 +42,9 @@ $(deriveJSON defaultOptions
   { constructorTagModifier  = map toLower
   , sumEncoding             = ObjectWithSingleField
   } ''Clock)
+
+getDay :: Clock -> Day
+getDay = localDay . getLocalTime . time
+
+dayGroups :: [Clock] -> [[Clock]]
+dayGroups = groupOn getDay
