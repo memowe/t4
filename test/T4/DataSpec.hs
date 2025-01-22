@@ -22,6 +22,8 @@ spec = do
     let theTime     = SLT $ LocalTime (fromGregorian 2017 11 23)
                                       (TimeOfDay 17 42 37)
         iso8601Time = "2017-11-23 17:42:37"
+    it "Simple constructor" $
+      simpleLocalTime 2017 11 23 17 42 37 `shouldBe` theTime
     describe "JSON" $ do
       it "Correct simple JSONification" $
         toJSON theTime `shouldBe` String iso8601Time
@@ -41,8 +43,7 @@ spec = do
       in  decodeThrow yaml `shouldBe` Just cfg
 
   context "Clock in/out data conversion" $ do
-    let theTime = SLT $ LocalTime (fromGregorian 2017 11 23)
-                                  (TimeOfDay 17 42 37)
+    let theTime = simpleLocalTime 2017 11 23 17 42 37
     it "Reading simple clock-in data" $
       decodeThrow "in:\n\
                   \  time: 2017-11-23 17:42:37\n\
@@ -57,14 +58,14 @@ spec = do
       in  decodeThrow yaml `shouldBe` Just clock
 
 instance Read SimpleLocalTime where
-  readsPrec _ = readP_to_S $ SLT <$> do
+  readsPrec _ = readP_to_S $ do
     y <-              dig 4
     m <- char '-' >>  dig 2
     d <- char '-' >>  dig 2
     h <- char ' ' >>  dig 2
     i <- char ':' >>  dig 2
     s <- char ':' >>  dig 2
-    return $ LocalTime (fromGregorian y m d) (TimeOfDay h i s)
+    return $ simpleLocalTime y m d h i s
     where dig n = read <$> count n (satisfy isDigit)
 
 instance Arbitrary Config where

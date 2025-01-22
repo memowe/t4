@@ -19,6 +19,12 @@ $(deriveJSON defaultOptions ''Config)
 newtype SimpleLocalTime = SLT {getLocalTime :: LocalTime}
                           deriving (Eq, Show, FromJSON)
 
+simpleLocalTime :: Int -> Int -> Int -> Int -> Int -> Int -> SimpleLocalTime
+simpleLocalTime y m d h i s =
+  let day = fromGregorian (fromIntegral y) m d
+      tod = TimeOfDay h i (fromIntegral s)
+  in  SLT (LocalTime day tod)
+
 instance ToJSON SimpleLocalTime where
   toJSON = String . T.pack . fmt . getLocalTime
     where fmt = formatTime defaultTimeLocale "%F %T"
