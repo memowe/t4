@@ -6,12 +6,31 @@ import Test.QuickCheck
 import Test.QuickCheck.Instances.Time ()
 
 import T4.Data
+import Data.Char
+import Data.Text (unpack)
+import Text.Read (readMaybe)
+import Text.ParserCombinators.ReadP
 import Data.Yaml
 import Data.Time
 import Data.Fixed
+import qualified Data.Aeson as A
 
 spec :: Spec
 spec = do
+
+  context "LocalTime wrapper" $ do
+    let theTime     = SLT $ LocalTime (fromGregorian 2017 11 23)
+                                      (TimeOfDay 17 42 37)
+        iso8601Time = "2017-11-23 17:42:37"
+    describe "JSON" $ do
+      it "Correct simple JSONification" $
+        toJSON theTime `shouldBe` String iso8601Time
+      it "Correct simple parsing" $
+        A.fromJSON (String iso8601Time) `shouldBe` A.Success theTime
+      prop "SLT-JSON-SLT roundtrip" $ \slt ->
+        let mslt = do String iso <- return $ toJSON (slt :: SimpleLocalTime)
+                      readMaybe $ unpack iso
+        in  mslt `shouldBe` Just slt
 
   context "Config data conversion" $ do
     it "Reading simple config" $
@@ -36,6 +55,17 @@ spec = do
     prop "Read-write roundtrip" $ \clock ->
       let yaml = encode (clock :: Clock)
       in  decodeThrow yaml `shouldBe` Just clock
+
+instance Read SimpleLocalTime where
+  readsPrec _ = readP_to_S $ SLT <$> do
+    y <-              dig 4
+    m <- char '-' >>  dig 2
+    d <- char '-' >>  dig 2
+    h <- char ' ' >>  dig 2
+    i <- char ':' >>  dig 2
+    s <- char ':' >>  dig 2
+    return $ LocalTime (fromGregorian y m d) (TimeOfDay h i s)
+    where dig n = read <$> count n (satisfy isDigit)
 
 instance Arbitrary Config where
   arbitrary = Config  <$> listOf (arbitrary `suchThat` valid)
