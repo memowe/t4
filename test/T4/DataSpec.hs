@@ -35,14 +35,6 @@ spec = do
                       readMaybe $ unpack iso
         in  mslt `shouldBe` Just slt
 
-  context "Config data conversion" $ do
-    it "Reading simple config" $
-      decodeThrow "allCats:\n- foo\n- bar\nallTags:\n- baz\n- quux\n"
-        `shouldBe` Just (Config ["foo", "bar"] ["baz", "quux"])
-    prop "Read-Write roundtrip" $ \cfg ->
-      let yaml = encode (cfg :: Config)
-      in  decodeThrow yaml `shouldBe` Just cfg
-
   context "Clock in/out data conversion" $ do
     let theTime = simpleLocalTime 2017 11 23 17 42 37
     it "Reading simple clock-in data" $
@@ -73,11 +65,6 @@ instance Read SimpleLocalTime where
     s <- char ':' >>  dig 2
     return $ simpleLocalTime y m d h i s
     where dig n = read <$> count n (satisfy isDigit)
-
-instance Arbitrary Config where
-  arbitrary = Config  <$> listOf (arbitrary `suchThat` valid)
-                      <*> listOf (arbitrary `suchThat` valid)
-    where valid = (',' `notElem`)
 
 instance Arbitrary SimpleLocalTime where
   arbitrary = SLT . intSecs <$> arbitrary
