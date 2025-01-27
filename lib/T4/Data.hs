@@ -36,6 +36,12 @@ $(deriveJSON defaultOptions
   , sumEncoding             = ObjectWithSingleField
   } ''Clock)
 
+isIn :: Clock -> Bool
+isIn (In {}) = True; isIn _ = False
+
+isOut :: Clock -> Bool
+isOut (Out {}) = True; isOut _ = False
+
 getDay :: Clock -> Day
 getDay = localDay . getLocalTime . time
 

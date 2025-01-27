@@ -37,15 +37,22 @@ spec = do
 
   context "Clock in/out data conversion" $ do
     let theTime = simpleLocalTime 2017 11 23 17 42 37
+        cIn     = In theTime "foo" ["bar", "baz"]
+        cOut    = Out theTime
+    describe "Predicates" $ do
+      it "in is in"       $ isIn  cIn   `shouldBe` True
+      it "in is not out"  $ isOut cIn   `shouldBe` False
+      it "out is out"     $ isOut cOut  `shouldBe` True
+      it "out is not in"  $ isIn  cOut  `shouldBe` False
     it "Reading simple clock-in data" $
       decodeThrow "in:\n\
                   \  time: 2017-11-23 17:42:37\n\
                   \  category: foo\n\
                   \  tags:\n  - bar\n  - baz\n"
-        `shouldBe` Just (In theTime "foo" ["bar", "baz"])
+        `shouldBe` Just cIn
     it "Reading simple clock-out data" $
       decodeThrow "out:\n  time: 2017-11-23 17:42:37\n"
-        `shouldBe` Just (Out theTime)
+        `shouldBe` Just cOut
     prop "Read-write roundtrip" $ \clock ->
       let yaml = encode (clock :: Clock)
       in  decodeThrow yaml `shouldBe` Just clock
