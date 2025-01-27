@@ -24,6 +24,7 @@ common basics
 library
   import:             basics
   exposed-modules:    T4.Data
+                    , Completion
   hs-source-dirs:     lib
 
 executable t4
@@ -42,5 +43,6 @@ test-suite t4-test
                     , quickcheck-instances
   build-tool-depends: hspec-discover:hspec-discover
   other-modules:      T4.DataSpec
+                    , CompletionSpec
   hs-source-dirs:     test
   main-is:            run-all-tests.hs
