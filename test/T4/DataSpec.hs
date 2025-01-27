@@ -40,7 +40,7 @@ spec = do
     it "Reading simple clock-in data" $
       decodeThrow "in:\n\
                   \  time: 2017-11-23 17:42:37\n\
-                  \  cat: foo\n\
+                  \  category: foo\n\
                   \  tags:\n  - bar\n  - baz\n"
         `shouldBe` Just (In theTime "foo" ["bar", "baz"])
     it "Reading simple clock-out data" $

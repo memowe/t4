@@ -20,14 +20,14 @@ instance ToJSON SimpleLocalTime where
   toJSON = String . T.pack . fmt . getLocalTime
     where fmt = formatTime defaultTimeLocale "%F %T"
 
-type Cat    = String
-type Tag    = String
+type Category = String
+type Tag      = String
 
-data Clock  = In  { time  :: SimpleLocalTime
-                  , cat   :: Cat
-                  , tags  :: [Tag]
+data Clock  = In  { time      :: SimpleLocalTime
+                  , category  :: Category
+                  , tags      :: [Tag]
                   }
-            | Out { time  :: SimpleLocalTime
+            | Out { time      :: SimpleLocalTime
                   }
               deriving (Show, Eq)
 
