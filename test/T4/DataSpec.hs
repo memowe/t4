@@ -62,6 +62,34 @@ spec = do
     prop "Grouping in days" $ \clockLog ->
       all sameDay (dayGroups clockLog)
 
+  context "Core data aggregation" $ do
+
+    describe "Categories" $ do
+      prop "Clock categories in allCategories" $ \clocks ->
+        let clockIns = filter isIn clocks
+        in  not (null clockIns) ==>
+            forAll (elements clockIns) $ \clock ->
+              category clock `elem` allCategories clocks
+      prop "allCategories in clocks" $ \clocks ->
+        let categories = allCategories clocks
+        in  not (null categories) ==>
+            forAll (elements categories) $ \cat ->
+              cat `elem` map category (filter isIn clocks)
+
+    describe "Tags" $ do
+      prop "Clock tags in allTags" $ \clocks ->
+        let clockIns = filter isIn clocks
+        in  not (null clockIns) ==>
+            forAll (elements clockIns) $ \clock ->
+              not (null $ tags clock) ==>
+              forAll (elements $ tags clock) $ \tag ->
+                tag `elem` allTags clocks
+      prop "allTags in clocks" $ \clocks ->
+        let theTags = allTags clocks
+        in  not (null theTags) ==>
+            forAll (elements theTags) $ \tag ->
+              tag `elem` concatMap tags (filter isIn clocks)
+
 instance Read SimpleLocalTime where
   readsPrec _ = readP_to_S $ do
     y <-              dig 4
