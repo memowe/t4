@@ -49,7 +49,7 @@ dayGroups :: [Clock] -> [[Clock]]
 dayGroups = groupOn getDay
 
 allCategories :: [Clock] -> [Category]
-allCategories = nub . map category . filter isIn
+allCategories = nubOrd . map category . filter isIn
 
 allTags :: [Clock] -> [Tag]
-allTags = nub . concatMap tags . filter isIn
+allTags = nubOrd . concatMap tags . filter isIn
