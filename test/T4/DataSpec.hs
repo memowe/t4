@@ -24,6 +24,8 @@ spec = do
       simpleLocalTime 2017 11 23 17 42 37
         `shouldBe` SLT (LocalTime (fromGregorian 2017 11 23)
                                   (TimeOfDay 17 42 37))
+    prop "Ord instance based on LocalTime" $ \(slt1, slt2) ->
+      slt1 <= slt2 `shouldBe` getLocalTime slt1 <= getLocalTime slt2
     describe "Stringification" $ do
       describe "Just the date" $ do
         it "Simple example" $
@@ -71,6 +73,8 @@ spec = do
       it "in is not out"  $ isOut cIn   `shouldBe` False
       it "out is out"     $ isOut cOut  `shouldBe` True
       it "out is not in"  $ isIn  cOut  `shouldBe` False
+    prop "Ord instance based on SLT" $ \(c1, c2) ->
+      c1 <= c2 `shouldBe` time c1 <= time c2
     it "Reading simple clock-in data" $
       decodeThrow "in:\n\
                   \  time: 2017-11-23 17:42:37\n\

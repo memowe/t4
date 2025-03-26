@@ -1,6 +1,7 @@
 module T4.Data where
 
 import Data.Char
+import Data.Function
 import qualified Data.Text as T
 import Data.List.Extra
 import Data.Time
@@ -8,7 +9,7 @@ import Data.Aeson
 import Data.Aeson.TH
 
 newtype SimpleLocalTime = SLT {getLocalTime :: LocalTime}
-                          deriving (Eq, Show, FromJSON)
+                          deriving (Eq, Show, Ord, FromJSON)
 
 simpleLocalTime :: Int -> Int -> Int -> Int -> Int -> Int -> SimpleLocalTime
 simpleLocalTime y m d h i s =
@@ -41,6 +42,9 @@ data Clock  = In  { time      :: SimpleLocalTime
             | Out { time      :: SimpleLocalTime
                   }
               deriving (Show, Eq)
+
+instance Ord Clock where
+  (<=) = (<=) `on` time
 
 $(deriveJSON defaultOptions
   { constructorTagModifier  = map toLower
