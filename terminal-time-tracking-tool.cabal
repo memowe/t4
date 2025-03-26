@@ -14,6 +14,8 @@ common basics
                     , GeneralizedNewtypeDeriving
   ghc-options:        -Wall
   build-depends:      base
+                    , filepath
+                    , directory
                     , extra
                     , time
                     , aeson
@@ -24,6 +26,7 @@ common basics
 library
   import:             basics
   exposed-modules:    T4.Data
+                    , T4.Storage
                     , Completion
   hs-source-dirs:     lib
 
@@ -41,8 +44,10 @@ test-suite t4-test
                     , hspec
                     , QuickCheck
                     , quickcheck-instances
+                    , temporary
   build-tool-depends: hspec-discover:hspec-discover
   other-modules:      T4.DataSpec
+                    , T4.StorageSpec
                     , CompletionSpec
   hs-source-dirs:     test
   main-is:            run-all-tests.hs

@@ -61,7 +61,7 @@ getDay :: Clock -> Day
 getDay = localDay . getLocalTime . time
 
 dayGroups :: [Clock] -> [[Clock]]
-dayGroups = groupOn getDay
+dayGroups = groupOn getDay . sort
 
 allCategories :: [Clock] -> [Category]
 allCategories = nubOrd . map category . filter isIn
