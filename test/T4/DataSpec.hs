@@ -8,7 +8,7 @@ import Test.QuickCheck.Instances.Time ()
 import T4.Data
 import Data.Char
 import Data.List
-import Data.Text (unpack)
+import Data.Text (unpack, pack)
 import Text.Read (readMaybe)
 import Text.ParserCombinators.ReadP
 import Data.Yaml
@@ -20,11 +20,10 @@ spec :: Spec
 spec = do
 
   context "LocalTime wrapper" $ do
-    let theTime     = SLT $ LocalTime (fromGregorian 2017 11 23)
-                                      (TimeOfDay 17 42 37)
-        iso8601Time = "2017-11-23 17:42:37"
     it "Simple constructor" $
-      simpleLocalTime 2017 11 23 17 42 37 `shouldBe` theTime
+      simpleLocalTime 2017 11 23 17 42 37
+        `shouldBe` SLT (LocalTime (fromGregorian 2017 11 23)
+                                  (TimeOfDay 17 42 37))
     describe "Stringification" $ do
       describe "Just the date" $ do
         it "Simple example" $
@@ -49,10 +48,15 @@ spec = do
         prop "General stringification" $ \slt ->
           sltString slt `shouldBe` dateString slt ++ " " ++ timeString slt
     describe "JSON" $ do
+      let theTime     = SLT $ LocalTime (fromGregorian 2017 11 23)
+                                        (TimeOfDay 17 42 37)
+          iso8601Time = "2017-11-23 17:42:37"
       it "Correct simple JSONification" $
         toJSON theTime `shouldBe` String iso8601Time
       it "Correct simple parsing" $
         A.fromJSON (String iso8601Time) `shouldBe` A.Success theTime
+      prop "JSONification contains stringification" $ \slt ->
+        toJSON slt `shouldBe` String (pack $ sltString slt)
       prop "SLT-JSON-SLT roundtrip" $ \slt ->
         let mslt = do String iso <- return $ toJSON (slt :: SimpleLocalTime)
                       readMaybe $ unpack iso
