@@ -25,6 +25,29 @@ spec = do
         iso8601Time = "2017-11-23 17:42:37"
     it "Simple constructor" $
       simpleLocalTime 2017 11 23 17 42 37 `shouldBe` theTime
+    describe "Stringification" $ do
+      describe "Just the date" $ do
+        it "Simple example" $
+          let slt = simpleLocalTime 2017 11 23 17 42 37
+          in  dateString slt `shouldBe` "2017-11-23"
+        prop "General date extraction" $ \slt ->
+          let day = localDay (getLocalTime slt)
+              ymd = formatTime defaultTimeLocale "%Y-%m-%d" day
+          in  dateString slt `shouldBe` ymd
+      describe "Just the time" $ do
+        it "Simple example" $
+          let slt = simpleLocalTime 2017 11 23 17 42 37
+          in  timeString slt `shouldBe` "17:42:37"
+        prop "General time extraction" $ \slt ->
+          let tme = localTimeOfDay (getLocalTime slt)
+              hms = formatTime defaultTimeLocale "%H:%M:%S" tme
+          in  timeString slt `shouldBe` hms
+      describe "Full stringification" $ do
+        it "Simple example" $
+          let slt = simpleLocalTime 2017 11 23 17 42 37
+          in  sltString slt `shouldBe` "2017-11-23 17:42:37"
+        prop "General stringification" $ \slt ->
+          sltString slt `shouldBe` dateString slt ++ " " ++ timeString slt
     describe "JSON" $ do
       it "Correct simple JSONification" $
         toJSON theTime `shouldBe` String iso8601Time

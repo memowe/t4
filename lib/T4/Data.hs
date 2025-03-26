@@ -16,9 +16,20 @@ simpleLocalTime y m d h i s =
       tod = TimeOfDay h i (fromIntegral s)
   in  SLT (LocalTime day tod)
 
+formatSLT :: String -> SimpleLocalTime -> String
+formatSLT fmt = formatTime defaultTimeLocale fmt . getLocalTime
+
+dateString :: SimpleLocalTime -> String
+dateString = formatSLT "%F"
+
+timeString :: SimpleLocalTime -> String
+timeString = formatSLT "%T"
+
+sltString :: SimpleLocalTime -> String
+sltString = formatSLT "%F %T"
+
 instance ToJSON SimpleLocalTime where
-  toJSON = String . T.pack . fmt . getLocalTime
-    where fmt = formatTime defaultTimeLocale "%F %T"
+  toJSON = String . T.pack . sltString
 
 type Category = String
 type Tag      = String
