@@ -139,9 +139,7 @@ instance Arbitrary SimpleLocalTime where
           floor' = fromIntegral . (floor :: Pico -> Int)
 
 instance Arbitrary Clock where
-  arbitrary = oneof [ Out <$> arbitrary
-                    , In  <$> arbitrary
-                          <*> arbitrary `suchThat` valid
-                          <*> listOf (arbitrary `suchThat` valid)
-                    ]
-    where valid = (&&) <$> ('#' `notElem`) <*> (',' `notElem`)
+  arbitrary = oneof
+    [ In  <$> arbitrary <*> arbitrary <*> listOf arbitrary
+    , Out <$> arbitrary
+    ]
