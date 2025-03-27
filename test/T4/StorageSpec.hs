@@ -1,9 +1,13 @@
 module T4.StorageSpec where
 
 import Test.Hspec
+import Test.Hspec.QuickCheck
+import Test.QuickCheck
 
 import T4.Data
 import T4.Storage
+import T4.DataSpec () -- Arbitrary Clock instance
+import Data.List
 import Data.Yaml
 import System.FilePath
 import System.IO.Temp
@@ -30,3 +34,9 @@ spec = do
       return (cs1, cs2)
     it "Correct clocks in first file"   $ cs1 `shouldBe` [c1, c2]
     it "Correct clocks in second file"  $ cs2 `shouldBe` [c3]
+
+  prop "Simple roundtrip Clocks-YAML-Clocks" $ \clocks -> ioProperty $ do
+    loaded <- withSystemTempDirectory "t4" $ \tdir -> do
+      writeDataToDir tdir clocks
+      loadDataFromDir tdir
+    return $ loaded === sort clocks
