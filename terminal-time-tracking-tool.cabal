@@ -21,7 +21,6 @@ common basics
                     , aeson
                     , yaml
                     , text
-                    , brick
 
 library
   import:             basics
@@ -32,7 +31,11 @@ library
 
 executable t4
   import:             basics
+  ghc-options:        -threaded
   build-depends:      terminal-time-tracking-tool
+                    , vty
+                    , brick
+                    , microlens-platform
   hs-source-dirs:     app
   main-is:            App.hs
 
