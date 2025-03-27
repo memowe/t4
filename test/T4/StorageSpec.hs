@@ -9,7 +9,9 @@ import T4.Storage
 import T4.DataSpec () -- Arbitrary Clock instance
 import Data.List
 import Data.Yaml
+import Data.Time
 import System.FilePath
+import System.Directory
 import System.IO.Temp
 
 spec :: Spec
@@ -40,3 +42,22 @@ spec = do
       writeDataToDir tdir clocks
       loadDataFromDir tdir
     return $ loaded === sort clocks
+
+  prop "Correct file name" $ \clock -> ioProperty $ do
+    filenames <- withSystemTempDirectory "t4" $ \tdir -> do
+      writeDataToDir tdir [clock]
+      listDirectory tdir
+    return $ filenames === [dateString (time clock) <.> "yml"]
+
+  prop "Same file => same day" $ \clocks ->
+    not (null clocks) ==> ioProperty $ do
+      fileClocks <- withSystemTempDirectory "t4" $ \tdir -> do
+        writeDataToDir tdir clocks
+        listDirectory tdir >>= mapM (decodeFileThrow . (tdir </>))
+      return $
+        forAll (elements fileClocks) $ \rclocks ->
+          allEqual (localDay . getLocalTime . time <$> rclocks)
+
+allEqual :: Eq a => [a] -> Bool
+allEqual []     = True
+allEqual (x:xs) = all (== x) xs
