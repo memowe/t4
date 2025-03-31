@@ -66,18 +66,22 @@ spec = do
                       readMaybe $ unpack iso
         in  mslt `shouldBe` Just slt
 
-  context "Clock in/out data conversion" $ do
-    let theTime = simpleLocalTime 2017 11 23 17 42 37
-        cIn     = In theTime (Just "foo") ["bar", "baz"]
-        cOut    = Out theTime
+  context "Clock in/out data" $ do
+    let theTime   = simpleLocalTime 2017 11 23 17 42 37
+        cIn       = In theTime (Just "foo") ["bar", "baz"]
+        cInNoCat  = In theTime Nothing      ["bar", "baz"]
+        cOut      = Out theTime
+
     describe "Predicates" $ do
       it "in is in"       $ isIn  cIn   `shouldBe` True
       it "in is not out"  $ isOut cIn   `shouldBe` False
       it "out is out"     $ isOut cOut  `shouldBe` True
       it "out is not in"  $ isIn  cOut  `shouldBe` False
+
     prop "Ord instance based on SLT" $ \(c1, c2) ->
       c1 <= c2 `shouldBe` time c1 <= time c2
-    context "Reading clock data" $ do
+
+    context "YAML clock data" $ do
       it "Reading simple clock-in data" $
         decodeThrow "in:\n\
                     \  time: 2017-11-23 17:42:37\n\
@@ -85,31 +89,31 @@ spec = do
                     \  tags:\n  - bar\n  - baz\n"
           `shouldBe` Just cIn
       describe "Reading simple clock-in data without category" $ do
-        let cInWithoutCat = cIn {category = Nothing}
         it "Empty category property" $
           decodeThrow "in:\n\
                       \  time: 2017-11-23 17:42:37\n\
                       \  category: \n\
                       \  tags:\n  - bar\n  - baz\n"
-            `shouldBe` Just cInWithoutCat
+            `shouldBe` Just cInNoCat
         it "No category property" $
           decodeThrow "in:\n\
                       \  time: 2017-11-23 17:42:37\n\
                       \  tags:\n  - bar\n  - baz\n"
-            `shouldBe` Just cInWithoutCat
+            `shouldBe` Just cInNoCat
       it "Reading simple clock-out data" $
         decodeThrow "out:\n  time: 2017-11-23 17:42:37\n"
           `shouldBe` Just cOut
-    prop "Read-write roundtrip" $ \clock ->
-      let yaml = encode (clock :: Clock)
-      in  decodeThrow yaml `shouldBe` Just clock
 
-  context "Clock log groups" $ do
-    let sameDay = (== 1) . length . group . map getDay
-    prop "Grouping in days" $ \clockLog ->
-      all sameDay (dayGroups clockLog)
+      prop "Read-write roundtrip" $ \clock ->
+        let yaml = encode (clock :: Clock)
+        in  decodeThrow yaml `shouldBe` Just clock
 
-  context "Core data aggregation" $ do
+  context "Clock data aggregation" $ do
+
+    context "Day groups" $ do
+      let sameDay = (== 1) . length . group . map getDay
+      prop "Grouping in days" $ \clockLog ->
+        all sameDay (dayGroups clockLog)
 
     describe "Categories" $ do
       prop "Clock categories in allCategories" $ \clocks ->
