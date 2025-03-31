@@ -2,6 +2,7 @@ module T4.Data where
 
 import Data.Char
 import Data.Function
+import Data.Maybe
 import qualified Data.Text as T
 import Data.List.Extra
 import Data.Time
@@ -36,7 +37,7 @@ type Category = String
 type Tag      = String
 
 data Clock  = In  { time      :: SimpleLocalTime
-                  , category  :: Category
+                  , category  :: Maybe Category
                   , tags      :: [Tag]
                   }
             | Out { time      :: SimpleLocalTime
@@ -64,7 +65,7 @@ dayGroups :: [Clock] -> [[Clock]]
 dayGroups = groupOn getDay . sort
 
 allCategories :: [Clock] -> [Category]
-allCategories = nubOrd . map category . filter isIn
+allCategories = nubOrd . mapMaybe category . filter isIn
 
 allTags :: [Clock] -> [Tag]
 allTags = nubOrd . concatMap tags . filter isIn

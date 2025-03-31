@@ -17,9 +17,9 @@ import System.IO.Temp
 spec :: Spec
 spec = do
 
-  let c1 = In   (simpleLocalTime 2001 2 3 4 5 6) "cat1" ["t1", "t2"]
+  let c1 = In   (simpleLocalTime 2001 2 3 4 5 6) (Just "cat1") ["t1", "t2"]
       c2 = Out  (simpleLocalTime 2001 2 3 4 5 7)
-      c3 = In   (simpleLocalTime 2001 2 4 4 5 6) "cat2" ["t2", "t3"]
+      c3 = In   (simpleLocalTime 2001 2 4 4 5 6) (Just "cat2") ["t2", "t3"]
   
   context "Loading data" $ do
     loaded <- runIO $ withSystemTempDirectory "t4" $ \tdir -> do

@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
 module T4.DataSpec where
 
 import Test.Hspec
@@ -8,6 +9,7 @@ import Test.QuickCheck.Instances.Time ()
 import T4.Data
 import Data.Char
 import Data.List
+import Data.Maybe
 import Data.Text (unpack, pack)
 import Text.Read (readMaybe)
 import Text.ParserCombinators.ReadP
@@ -66,7 +68,7 @@ spec = do
 
   context "Clock in/out data conversion" $ do
     let theTime = simpleLocalTime 2017 11 23 17 42 37
-        cIn     = In theTime "foo" ["bar", "baz"]
+        cIn     = In theTime (Just "foo") ["bar", "baz"]
         cOut    = Out theTime
     describe "Predicates" $ do
       it "in is in"       $ isIn  cIn   `shouldBe` True
@@ -75,15 +77,29 @@ spec = do
       it "out is not in"  $ isIn  cOut  `shouldBe` False
     prop "Ord instance based on SLT" $ \(c1, c2) ->
       c1 <= c2 `shouldBe` time c1 <= time c2
-    it "Reading simple clock-in data" $
-      decodeThrow "in:\n\
-                  \  time: 2017-11-23 17:42:37\n\
-                  \  category: foo\n\
-                  \  tags:\n  - bar\n  - baz\n"
-        `shouldBe` Just cIn
-    it "Reading simple clock-out data" $
-      decodeThrow "out:\n  time: 2017-11-23 17:42:37\n"
-        `shouldBe` Just cOut
+    context "Reading clock data" $ do
+      it "Reading simple clock-in data" $
+        decodeThrow "in:\n\
+                    \  time: 2017-11-23 17:42:37\n\
+                    \  category: foo\n\
+                    \  tags:\n  - bar\n  - baz\n"
+          `shouldBe` Just cIn
+      describe "Reading simple clock-in data without category" $ do
+        let cInWithoutCat = cIn {category = Nothing}
+        it "Empty category property" $
+          decodeThrow "in:\n\
+                      \  time: 2017-11-23 17:42:37\n\
+                      \  category: \n\
+                      \  tags:\n  - bar\n  - baz\n"
+            `shouldBe` Just cInWithoutCat
+        it "No category property" $
+          decodeThrow "in:\n\
+                      \  time: 2017-11-23 17:42:37\n\
+                      \  tags:\n  - bar\n  - baz\n"
+            `shouldBe` Just cInWithoutCat
+      it "Reading simple clock-out data" $
+        decodeThrow "out:\n  time: 2017-11-23 17:42:37\n"
+          `shouldBe` Just cOut
     prop "Read-write roundtrip" $ \clock ->
       let yaml = encode (clock :: Clock)
       in  decodeThrow yaml `shouldBe` Just clock
@@ -97,15 +113,16 @@ spec = do
 
     describe "Categories" $ do
       prop "Clock categories in allCategories" $ \clocks ->
-        let clockIns = filter isIn clocks
-        in  not (null clockIns) ==>
-            forAll (elements clockIns) $ \clock ->
-              category clock `elem` allCategories clocks
+        let clockIns    = filter isIn clocks
+            categories  = mapMaybe category clockIns
+        in  not (null categories) ==>
+            forAll (elements categories) $ \cat ->
+              cat `elem` allCategories clocks
       prop "allCategories in clocks" $ \clocks ->
         let categories = allCategories clocks
         in  not (null categories) ==>
             forAll (elements categories) $ \cat ->
-              cat `elem` map category (filter isIn clocks)
+              cat `elem` mapMaybe category (filter isIn clocks)
 
     describe "Tags" $ do
       prop "Clock tags in allTags" $ \clocks ->
