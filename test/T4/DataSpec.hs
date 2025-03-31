@@ -81,6 +81,14 @@ spec = do
     prop "Ord instance based on SLT" $ \(c1, c2) ->
       c1 <= c2 `shouldBe` time c1 <= time c2
 
+    context "Summary: stringification for humans" $ do
+      it "Simple clock in" $
+        summary cIn `shouldBe` "in (2017-11-23 17:42:37) [foo] #bar #baz"
+      it "Clock in without category" $
+        summary cInNoCat `shouldBe` "in (2017-11-23 17:42:37) #bar #baz"
+      it "Clock out" $
+        summary cOut `shouldBe` "out (2017-11-23 17:42:37)"
+
     context "YAML clock data" $ do
       it "Reading simple clock-in data" $
         decodeThrow "in:\n\

@@ -61,6 +61,12 @@ isOut (Out {}) = True; isOut _ = False
 getDay :: Clock -> Day
 getDay = localDay . getLocalTime . time
 
+summary :: Clock -> String
+summary (Out t)       = "out (" ++ sltString t ++ ")"
+summary (In t mc ts)  = "in (" ++ sltString t ++ ")" ++ catStr ++ tagsStr
+  where catStr  = maybe "" ((" [" ++) . (++ "]")) mc
+        tagsStr = concatMap (" #" ++) ts
+
 dayGroups :: [Clock] -> [[Clock]]
 dayGroups = groupOn getDay . sort
 
