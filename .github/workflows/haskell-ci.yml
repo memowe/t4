@@ -44,7 +44,7 @@ jobs:
       - name: Test
         run: cabal test --test-show-details=streaming
       - name: Build API docs
-        run: cabal haddock --builddir=haddock_build --haddock-hyperlinked-source --haddock-html-location=https://hackage.haskell.org/package/$pkg-$version/docs
+        run: cabal haddock --builddir=haddock_build --haddock-hyperlinked-source --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs'
       - name: Save cached dependencies (build and haddock)
         uses: actions/cache/save@v4
         if: ${{ steps.cache.outputs.cache-primary-key != steps.cache.outputs.cache-matched-key }}
