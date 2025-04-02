@@ -35,4 +35,6 @@ initT4 = do
   clocks .= loadedClocks
 
 drawT4 :: T4State -> [Widget ()]
-drawT4 state = [str (show $ state ^. clocks)]
+drawT4 state = lastClock ++ widgets
+  where lastClock = maybe [] (return . str . summary) (state ^. clocks ^? _last)
+        widgets   = [str "TODO"] -- TODO
