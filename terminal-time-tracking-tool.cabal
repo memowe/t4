@@ -29,15 +29,15 @@ library
                     , Completion
   hs-source-dirs:     lib
 
-executable t4
+executable t5
   import:             basics
   ghc-options:        -threaded
   build-depends:      terminal-time-tracking-tool
                     , vty
                     , brick
                     , microlens-platform
-  hs-source-dirs:     app
-  main-is:            App.hs
+  hs-source-dirs:     t4-tui
+  main-is:            TUI.hs
 
 test-suite t4-test
   import:             basics
