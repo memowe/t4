@@ -33,6 +33,7 @@ executable t4
   import:             basics
   build-depends:      terminal-time-tracking-tool
                     , optparse-applicative
+                    , mtl
   hs-source-dirs:     t4-commands
   main-is:            Commands.hs
 
