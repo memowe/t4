@@ -27,7 +27,6 @@ library
   import:             basics
   exposed-modules:    T4.Data
                     , T4.Storage
-                    , Completion
   hs-source-dirs:     lib
 
 executable t4
@@ -48,6 +47,5 @@ test-suite t4-test
   build-tool-depends: hspec-discover:hspec-discover
   other-modules:      T4.DataSpec
                     , T4.StorageSpec
-                    , CompletionSpec
   hs-source-dirs:     test
   main-is:            run-all-tests.hs
