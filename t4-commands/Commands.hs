@@ -7,6 +7,7 @@ data Command  = CmdIn { ccat  :: Category
                       , ctags :: [Tag]
                       }
               | CmdOut
+              | CmdStatus
               deriving Show
 
 inParser :: Parser Command
@@ -27,10 +28,14 @@ inParser =
 outParser :: Parser Command
 outParser = pure CmdOut
 
+statusParser :: Parser Command
+statusParser = pure CmdStatus
+
 commandParser :: Parser Command
 commandParser = hsubparser
-  (   command "in"  (info inParser  (progDesc "Clocking in"))
-  <>  command "out" (info outParser (progDesc "Clocking out"))
+  (   command "in"      (info inParser      (progDesc "Clocking in"))
+  <>  command "out"     (info outParser     (progDesc "Clocking out"))
+  <>  command "status"  (info statusParser  (progDesc "Show current status"))
   )
 
 opts :: ParserInfo Command
