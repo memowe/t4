@@ -3,7 +3,7 @@ module Main where
 import T4.Data
 import Options.Applicative
 
-data Command  = CmdIn { ccat  :: Category
+data Command  = CmdIn { ccat  :: Maybe Category
                       , ctags :: [Tag]
                       }
               | CmdOut
@@ -12,12 +12,13 @@ data Command  = CmdIn { ccat  :: Category
 
 inParser :: Parser Command
 inParser =
-  CmdIn <$> strOption (   long    "category"
-                      <>  short   'c'
-                      <>  metavar "CATEGORY"
-                      <>  value   ""
-                      <>  help    "Simple name of a category"
-                      )
+  CmdIn <$> optional
+              ( strOption (   long    "category"
+                          <>  short   'c'
+                          <>  metavar "CATEGORY"
+                          <>  help    "Simple name of a category"
+                          )
+              )
         <*> some
               ( argument  str
                           (   metavar "TAGS"
