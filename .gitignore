@@ -1,6 +1,3 @@
-# Default t4 data directory
-t4-data
-
 # Vim swap files
 *.sw[a-p]
 
