@@ -16,8 +16,8 @@ makeLenses ''T4State
 
 main :: IO ()
 main = do
-  let clockDir  = "t4-data" -- TODO
-      initState = T4State clockDir []
+  dd <- getStorageDirectory
+  let initState = T4State dd []
   void $ defaultMain t4App initState
 
 t4App :: App T4State () ()
