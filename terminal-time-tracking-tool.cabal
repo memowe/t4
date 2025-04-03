@@ -11,6 +11,7 @@ common basics
   default-language:   Haskell2010
   default-extensions: TemplateHaskell
                     , OverloadedStrings
+                    , TupleSections
                     , GeneralizedNewtypeDeriving
   ghc-options:        -Wall
   build-depends:      base
@@ -20,6 +21,7 @@ common basics
                     , time
                     , aeson
                     , yaml
+                    , regex-tdfa
                     , text
 
 library
