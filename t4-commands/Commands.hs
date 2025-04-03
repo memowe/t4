@@ -1,17 +1,9 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# HLINT ignore "Use newtype instead of data" #-}
 module Main where
 
 import T4.Data
 import T4.Storage
-import Data.Maybe
 import Data.Time
 import Options.Applicative
-import Control.Monad.Reader
-import System.Environment
-
-data Config   = Config  { dataDir :: FilePath
-                        }
 
 data Command  = CmdIn { ccat  :: Maybe Category
                       , ctags :: [Tag]
@@ -55,34 +47,27 @@ opts = info (commandParser <**> helper)
   <>  header    "t4 - terminal time tracking tool"
   )
 
-configure :: IO Config
-configure = do
-  dd <- fromMaybe "t4-data" <$> lookupEnv "T4_DIR"
-  return $ Config dd
-
 getCurrentSLT :: IO SimpleLocalTime
 getCurrentSLT = SLT . zonedTimeToLocalTime <$> getZonedTime
 
-type T4M = ReaderT Config IO
-
-addClock :: Clock -> T4M ()
+addClock :: Clock -> IO ()
 addClock clock = do
-  dd      <- asks dataDir
-  clocks  <- liftIO $ loadDataFromDir dd
-  liftIO $ writeDataToDir dd (clock : clocks)
+  dd      <- getStorageDirectory
+  clocks  <- loadDataFromDir dd
+  writeDataToDir dd (clock : clocks)
 
-handle :: Command -> T4M ()
-handle (CmdIn c ts) = do  cslt <- liftIO getCurrentSLT
+handle :: Command -> IO ()
+handle (CmdIn c ts) = do  cslt <- getCurrentSLT
                           addClock $ In cslt c ts
-handle CmdOut       = do  cslt <- liftIO getCurrentSLT
+handle CmdOut       = do  cslt <- getCurrentSLT
                           addClock $ Out cslt
-handle CmdStatus    = do  clocks <- liftIO . loadDataFromDir =<< asks dataDir
-                          liftIO . putStrLn $ case clocks of
+handle CmdStatus    = do  dd      <- getStorageDirectory
+                          clocks  <- loadDataFromDir dd
+                          putStrLn $ case clocks of
                             [] -> "No clock data yet"
                             cs -> summary $ last cs
 
 main :: IO ()
 main = do
-  cmd   <- execParser opts
-  conf  <- configure
-  runReaderT (handle cmd) conf
+  cmd <- execParser opts
+  handle cmd
