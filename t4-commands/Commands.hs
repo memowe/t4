@@ -18,7 +18,6 @@ data Command  = CmdIn { ccat  :: Maybe Category
                       }
               | CmdOut
               | CmdStatus
-              deriving Show
 
 inParser :: Parser Command
 inParser =
