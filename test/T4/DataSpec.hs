@@ -83,11 +83,11 @@ spec = do
 
     context "Summary: stringification for humans" $ do
       it "Simple clock in" $
-        summary cIn `shouldBe` "in (2017-11-23 17:42:37) [foo] #bar #baz"
+        summary cIn `shouldBe` "IN (2017-11-23 17:42:37) [foo] #bar #baz"
       it "Clock in without category" $
-        summary cInNoCat `shouldBe` "in (2017-11-23 17:42:37) #bar #baz"
+        summary cInNoCat `shouldBe` "IN (2017-11-23 17:42:37) #bar #baz"
       it "Clock out" $
-        summary cOut `shouldBe` "out (2017-11-23 17:42:37)"
+        summary cOut `shouldBe` "OUT (2017-11-23 17:42:37)"
 
     context "YAML clock data" $ do
       it "Reading simple clock-in data" $
