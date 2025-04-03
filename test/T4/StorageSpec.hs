@@ -13,6 +13,8 @@ import Data.Time
 import System.FilePath
 import System.Directory
 import System.IO.Temp
+import System.Environment
+import GHC.IO.Exception
 
 spec :: Spec
 spec = do
@@ -20,7 +22,7 @@ spec = do
   let c1 = In   (simpleLocalTime 2001 2 3 4 5 6) (Just "cat1") ["t1", "t2"]
       c2 = Out  (simpleLocalTime 2001 2 3 4 5 7)
       c3 = In   (simpleLocalTime 2001 2 4 4 5 6) (Just "cat2") ["t2", "t3"]
-  
+
   context "Loading data" $ do
     loaded <- runIO $ withSystemTempDirectory "t4" $ \tdir -> do
       encodeFile (tdir </> "2001-02-03" <.> "yml") [c2, c1]
@@ -58,6 +60,80 @@ spec = do
         forAll (elements fileClocks) $ \rclocks ->
           allEqual (localDay . getLocalTime . time <$> rclocks)
 
+  context "Storage directory on disk" $ do
+
+    describe "Storage directory name" $ do
+      it "Expect ~/.t4-data" $ do
+        hd <- getHomeDirectory
+        sd <- getStorageDirectoryPath
+        sd `shouldBe` hd </> ".t4-data"
+      it "Override" $ do
+        (td, sd) <- withSystemTempDirectory "override-t4" $ \tdir -> do
+          (tdir,) <$> withEnv "T4DIR" tdir getStorageDirectoryPath
+        sd `shouldBe` td
+
+    describe "Storage directory predicates" $ do
+      it "Exists" $ do
+        isSD <- withSystemTempDirectory "empty" $ \tdir -> do
+          isStorageDirectory $ tdir </> "does-not-exist"
+        isSD `shouldBe` False
+      it "Directory" $ do
+        isSD <- withSystemTempFile "file" $ \tfile _ -> do
+          isStorageDirectory tfile
+        isSD `shouldBe` False
+      it "Readable" $ do
+        isSD <- withSystemTempDirectory "not-readable" $ \tdir -> do
+          perms <- getPermissions tdir
+          setPermissions tdir perms {readable = False}
+          isStorageDirectory tdir
+        isSD `shouldBe` False
+      it "Writable" $ do
+        isSD <- withSystemTempDirectory "not-writable" $ \tdir -> do
+          perms <- getPermissions tdir
+          setPermissions tdir perms {writable = False}
+          isStorageDirectory tdir
+        isSD `shouldBe` False
+      it "Not only T4 yaml" $ do
+        isSD <- withSystemTempDirectory "not-empty" $ \tdir -> do
+          writeFile (tdir </> "foo.txt") "This is not T4 data"
+          isStorageDirectory tdir
+        isSD `shouldBe` False
+      prop "T4 data -> OK" $ \clocks -> ioProperty $ do
+        isSD <- withSystemTempDirectory "ok-t4-data" $ \tdir -> do
+          writeDataToDir tdir clocks
+          isStorageDirectory tdir
+        isSD `shouldBe` True
+
+    describe "Actual storage directory" $ do
+
+      it "Storage directory gets created" $ do
+        checks <- withSystemTempDirectory "container" $ \tdir -> do
+          let sdName = tdir </> "t4-data"
+          exists1 <- doesDirectoryExist sdName
+          sd      <- withEnv "T4DIR" sdName getStorageDirectory
+          exists2 <- doesDirectoryExist sdName
+          isSD    <- isStorageDirectory sdName
+          return (exists1, exists2, sd == sdName, isSD)
+        checks `shouldBe` (False, True, True, True)
+
+      after_ (unsetEnv "T4DIR") $ -- because withEnv gets interrupted
+        it "Not a storage directory -> die" $ do
+          let action = withSystemTempDirectory "dirty" $ \tdir -> do
+                        writeFile (tdir </> "foo.txt") "This is not T4 data"
+                        withEnv "T4DIR" tdir getStorageDirectory
+          action `shouldThrow` \e ->
+            "Not a t4 storage directory" `isPrefixOf` ioe_description e
+
 allEqual :: Eq a => [a] -> Bool
 allEqual []     = True
 allEqual (x:xs) = all (== x) xs
+
+withEnv :: String -> String -> IO a -> IO a
+withEnv key value action = do
+  backup <- lookupEnv key
+  setEnv key value
+  result <- action
+  case backup of
+    Just val  -> setEnv key val
+    Nothing   -> unsetEnv key
+  return result
