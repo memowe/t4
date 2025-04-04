@@ -2,6 +2,7 @@ module Main where
 
 import T4.Data
 import T4.Storage
+import Data.List
 import Data.Time
 import Options.Applicative
 
@@ -10,6 +11,8 @@ data Command  = CmdIn { ccat  :: Maybe Category
                       }
               | CmdOut
               | CmdStatus
+              | CmdCats
+              | CmdTags
 
 inParser :: Parser Command
 inParser =
@@ -33,11 +36,19 @@ outParser = pure CmdOut
 statusParser :: Parser Command
 statusParser = pure CmdStatus
 
+catsParser :: Parser Command
+catsParser = pure CmdCats
+
+tagsParser :: Parser Command
+tagsParser = pure CmdTags
+
 commandParser :: Parser Command
 commandParser = hsubparser
-  (   command "in"      (info inParser      (progDesc "Clocking in"))
-  <>  command "out"     (info outParser     (progDesc "Clocking out"))
-  <>  command "status"  (info statusParser  (progDesc "Show current status"))
+  (   command "in"          (info inParser      (progDesc "Clocking in"))
+  <>  command "out"         (info outParser     (progDesc "Clocking out"))
+  <>  command "status"      (info statusParser  (progDesc "Show current status"))
+  <>  command "categories"  (info catsParser    (progDesc "List all categories"))
+  <>  command "tags"        (info tagsParser    (progDesc "List all tags"))
   )
 
 opts :: ParserInfo Command
@@ -66,6 +77,12 @@ handle CmdStatus    = do  dd      <- getStorageDirectory
                           putStrLn $ case clocks of
                             [] -> "No clock data yet"
                             cs -> summary $ last cs
+handle CmdCats      = do  dd      <- getStorageDirectory
+                          clocks  <- loadDataFromDir dd
+                          mapM_ putStrLn (sort $ allCategories clocks)
+handle CmdTags      = do  dd      <- getStorageDirectory
+                          clocks  <- loadDataFromDir dd
+                          mapM_ putStrLn (sort $ allTags clocks)
 
 main :: IO ()
 main = do
