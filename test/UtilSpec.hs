@@ -41,7 +41,7 @@ spec = do
     prop "All the values" $ \xs -> not (null xs) ==> do
       let vals  = nub $ concatMap fst (init $ sortOn snd xs)
           dvals = M.keys $ durations id (xs :: [([Int], LocalTime)])
-      not (null dvals) ==> dvals `shouldBe` sort vals
+      not (null dvals) ==> dvals `shouldMatchList` vals
 
     prop "Durations are non-negative" $ \xs -> do
       let durs = M.elems $ durations id (xs :: [([Char], LocalTime)])
