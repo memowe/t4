@@ -8,6 +8,8 @@ import T4.Data
 import T4.DataSpec () -- Arbitrary Clock instance
 import Util
 import Data.List
+import Data.Function
+import Data.Map ((!))
 import qualified Data.Map as M
 import Data.Time
 
@@ -46,6 +48,15 @@ spec = do
     prop "Durations are non-negative" $ \xs -> do
       let durs = M.elems $ durations id (xs :: [([Char], LocalTime)])
       not (null durs) ==> forAll (elements durs) (`shouldSatisfy` (>= 0))
+
+    prop "Correct duration for single slots" $ \(x, y) -> do
+      let clocks    = sortOn snd [x, y] :: [([Int], LocalTime)]
+          (x1, x2)  = (head clocks, last clocks)
+      not (null $ fst x1) ==> do
+        let diff  = (diffLocalTime `on` snd) x2 x1
+            durs  = durations id clocks
+        forAll (elements $ M.keys durs) $ \val ->
+          durs ! val `shouldBe` diff
 
     prop "Order doesn't matter" $ \xs -> do
       let durs = durations id (xs :: [([Int], LocalTime)])
