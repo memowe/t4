@@ -2,9 +2,9 @@
 
 Haskell library and terminal GUI tool for time tracking.
 
-## Run tool
+## Run t4 TUI (t5)
 
-    cabal run t4
+    cabal run t5
 
 ## Run tests
 
