@@ -95,27 +95,27 @@ handle (CmdIn c ts)           = do  cslt <- getCurrentSLT
                                     addClock $ In cslt c ts
 handle CmdOut                 = do  cslt <- getCurrentSLT
                                     addClock $ Out cslt
-handle CmdStatus              = do  dd      <- getStorageDirectory
-                                    clocks  <- loadDataFromDir dd
+handle CmdStatus              = do  clocks <- getClocks
                                     putStrLn $ case clocks of
                                       [] -> "No clock data yet"
                                       cs -> summary $ last cs
-handle CmdCats                = do  dd      <- getStorageDirectory
-                                    clocks  <- loadDataFromDir dd
+handle CmdCats                = do  clocks <- getClocks
                                     mapM_ putStrLn (sort $ allCategories clocks)
-handle CmdTags                = do  dd      <- getStorageDirectory
-                                    clocks  <- loadDataFromDir dd
+handle CmdTags                = do  clocks <- getClocks
                                     mapM_ putStrLn (sort $ allTags clocks)
-handle (CmdReport True  True) = do  dd      <- getStorageDirectory
-                                    clocks  <- loadDataFromDir dd
+handle (CmdReport True  True) = do  clocks <- getClocks
                                     putStrLn "Categories"
                                     showMap 2 (categoryDurations clocks)
                                     putStrLn "Tags"
                                     showMap 2 (tagDurations clocks)
-handle (CmdReport c     t)    = do  dd      <- getStorageDirectory
-                                    clocks  <- loadDataFromDir dd
-                                    when c $ showMap 0 $ categoryDurations  clocks
-                                    when t $ showMap 0 $ tagDurations       clocks
+handle (CmdReport c     t)    = do  clocks <- getClocks
+                                    when c $ do
+                                      showMap 0 $ categoryDurations clocks
+                                    when t $ do
+                                      showMap 0 $ tagDurations clocks
+
+getClocks :: IO [Clock]
+getClocks = loadDataFromDir =<< getStorageDirectory
 
 showMap :: Show a => Int -> Map String a -> IO ()
 showMap indent m = do
