@@ -21,49 +21,6 @@ data Command  = CmdIn { ccat  :: Maybe Category
                           , crepTags  :: Bool
                           }
 
-inParser :: Parser Command
-inParser =
-  CmdIn <$> optional
-              ( strOption (   long    "category"
-                          <>  short   'c'
-                          <>  metavar "CATEGORY"
-                          <>  help    "Simple name of a category"
-                          )
-              )
-        <*> some
-              ( argument  str
-                          (   metavar "TAGS"
-                          <>  help "List of tags, separated by space"
-                          )
-              )
-
-outParser :: Parser Command
-outParser = pure CmdOut
-
-statusParser :: Parser Command
-statusParser = pure CmdStatus
-
-catsParser :: Parser Command
-catsParser = pure CmdCats
-
-tagsParser :: Parser Command
-tagsParser = pure CmdTags
-
-reportParser :: Parser Command
-reportParser = correct <$> catSwitch <*> tagSwitch
-  where catSwitch = switch
-                      (   long "categories"
-                      <>  short 'c'
-                      <>  help "Include categories in the report"
-                      )
-        tagSwitch = switch
-                      (   long "tags"
-                      <>  short 't'
-                      <>  help "Include tags in the report"
-                      )
-        correct False False = CmdReport True  True
-        correct c     t     = CmdReport c     t
-
 commandParser :: Parser Command
 commandParser = hsubparser
   (   command "in"          (info inParser      (progDesc "Clocking in"))
@@ -73,6 +30,36 @@ commandParser = hsubparser
   <>  command "tags"        (info tagsParser    (progDesc "List all tags"))
   <>  command "report"      (info reportParser  (progDesc "Report"))
   )
+
+  where outParser     = pure CmdOut
+        statusParser  = pure CmdStatus
+        catsParser    = pure CmdCats
+        tagsParser    = pure CmdTags
+        inParser      =
+          CmdIn <$> optional
+                      ( strOption (   long    "category"
+                                  <>  short   'c'
+                                  <>  metavar "CATEGORY"
+                                  <>  help    "Simple name of a category"
+                                  )
+                      )
+                <*> some
+                      ( argument str
+                                  (   metavar "TAGS"
+                                  <>  help "List of tags, separated by space"
+                                  )
+                      )
+        reportParser  =
+          correct <$> switch  (   long "categories"
+                              <>  short 'c'
+                              <>  help "Include categories in the report"
+                              )
+                  <*> switch  (   long "tags"
+                              <>  short 't'
+                              <>  help "Include tags in the report"
+                              )
+          where correct False False = CmdReport True  True
+                correct c     t     = CmdReport c     t
 
 opts :: ParserInfo Command
 opts = info (commandParser <**> helper)
