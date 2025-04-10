@@ -13,14 +13,16 @@ import Data.Map ((!))
 import qualified Data.Map as M
 import Data.Time
 
+lt :: Int -> Int -> Int -> Int -> Int -> Int -> LocalTime
+lt y m d h i s = getLocalTime $ simpleLocalTime y m d h i s
+
 spec :: Spec
 spec = do
 
   context "Duration helper function" $ do
 
     describe "Example" $ do
-      let lt y m d h i s = getLocalTime $ simpleLocalTime y m d h i s
-          entries = [ (['1'],     lt 2017 7 17 15 42 0)
+      let entries = [ (['1'],     lt 2017 7 17 15 42 0)
                     , (['2','3'], lt 2017 7 17 17 42 0)
                     , ([],        lt 2017 7 17 20 42 0)
                     , (['3','3'], lt 2018 7 17 17 42 0)
