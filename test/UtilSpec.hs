@@ -9,6 +9,7 @@ import T4.DataSpec () -- Arbitrary Clock instance
 import Util
 import Data.List
 import Data.Function
+import Data.Bifunctor
 import Data.Map ((!))
 import qualified Data.Map as M
 import Data.Time
@@ -63,3 +64,24 @@ spec = do
     prop "Order doesn't matter" $ \xs -> do
       let durs = durations id (xs :: [([Int], LocalTime)])
       forAll (shuffle xs) $ \ys -> durations id ys `shouldBe` durs
+
+  context "Difference time splitting" $ do
+
+    describe "splitDiffTime" $ do
+      let diff1   = secondsToNominalDiffTime 3702
+          dconf   = DurConf [ DurUnit "s" "s" 60
+                            , DurUnit "m" "m" 60
+                            , DurUnit "h" "h" maxBound
+                            ]
+          splits1 = splitDiffTime dconf diff1
+      it "Correctly split 3700 seconds with custom duration config" $
+        map (second show) splits1 `shouldBe` [(1,"h"), (1,"m"), (42,"s")]
+      let diff2   = secondsToNominalDiffTime (60 * 60 * 17 + 42)
+          splits2 = splitDiffTime naturalDurationConfig diff2
+      it "Correctly split 17:00:42 in natural duration config" $
+        map (second show) splits2
+          `shouldBe` [(0,"y"), (0,"mo"), (0,"d"), (17,"h"), (0,"mi"), (42,"s")]
+      let splits3 = splitDiffTime manDurationConfig diff2
+      it "Correctly split 17:00:42 in man duration config" $
+        map (second show) splits3
+          `shouldBe` [(0,"y"), (0,"mo"), (2,"d"), (1,"h"), (0,"mi"), (42,"s")]
