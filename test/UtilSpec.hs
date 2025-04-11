@@ -71,7 +71,7 @@ spec = do
       let diff1   = secondsToNominalDiffTime 3702
           dconf   = DurConf [ DurUnit "s" "s" 60
                             , DurUnit "m" "m" 60
-                            , DurUnit "h" "h" maxBound
+                            , DurUnit "h" "h" (fromIntegral (maxBound :: Int))
                             ]
           splits1 = splitDiffTime dconf diff1
       it "Correctly split 3700 seconds with custom duration config" $

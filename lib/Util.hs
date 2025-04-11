@@ -21,7 +21,7 @@ durations extract xs =
 newtype DurationConfig  = DurConf { units :: [DurationUnit] }
 data    DurationUnit    = DurUnit { long  :: String
                                   , short :: String
-                                  , size  :: Int
+                                  , size  :: Integer
                                   } deriving Eq
 
 instance Show DurationUnit where show = short
@@ -33,7 +33,7 @@ naturalDurationConfig = DurConf
   , DurUnit "hours"   "h"   24
   , DurUnit "days"    "d"   30
   , DurUnit "months"  "mo"  12
-  , DurUnit "years"   "y"   maxBound
+  , DurUnit "years"   "y"   (fromIntegral (maxBound :: Int))
   ]
 
 manDurationConfig :: DurationConfig
@@ -43,10 +43,10 @@ manDurationConfig = DurConf
   , DurUnit "hours"       "h"   8
   , DurUnit "man-days"    "d"   20
   , DurUnit "man-months"  "mo"  12
-  , DurUnit "years"       "y"   maxBound
+  , DurUnit "years"       "y"   (fromIntegral (maxBound :: Int))
   ]
 
-splitDiffTime :: DurationConfig -> NominalDiffTime -> [(Int, DurationUnit)]
+splitDiffTime :: DurationConfig -> NominalDiffTime -> [(Integer, DurationUnit)]
 splitDiffTime dc time = fst $ foldl step ([], floor time) (units dc)
   where step (xs, i) du@(DurUnit _ _ s) =
           let (q, r) = i `quotRem` s
