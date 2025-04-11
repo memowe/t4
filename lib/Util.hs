@@ -45,6 +45,10 @@ manDurationConfig = DurConf
   , DurUnit "years"       "y"   (fromIntegral (maxBound :: Int))
   ]
 
+maxDuration :: DurationConfig -> NominalDiffTime
+maxDuration = secondsToNominalDiffTime . fromIntegral
+            . pred . product . map size . units
+
 splitDiffTime :: DurationConfig -> NominalDiffTime -> [(Integer, DurationUnit)]
 splitDiffTime dc time = fst $ foldl step ([], floor time) (units dc)
   where step (xs, i) du@(DurUnit _ _ s) =

@@ -67,7 +67,7 @@ spec = do
 
   context "Difference time splitting" $ do
 
-    describe "splitDiffTime" $ do
+    describe "splitDiffTime examples" $ do
       let diff1   = secondsToNominalDiffTime 3702
           dconf   = DurConf [ DurUnit "s" "s" 60
                             , DurUnit "m" "m" 60
@@ -85,3 +85,38 @@ spec = do
       it "Correctly split 17:00:42 in man duration config" $
         map (second short) splits3
           `shouldBe` [(0,"y"), (0,"mo"), (2,"d"), (1,"h"), (0,"mi"), (42,"s")]
+
+    describe "General splitDiffTime properties" $ do
+      prop "Empty conf -> empty parts" $ \d ->
+        splitDiffTime (DurConf []) d `shouldBe` []
+      prop "Duration conf length = output length" $ \(d,dc) ->
+        not (null $ units dc) ==>
+          length (splitDiffTime dc d) `shouldBe` length (units dc)
+      prop "Input 0 -> all parts 0" $ \dc ->
+        not (null $ units dc) ==>
+          forAll (elements $ splitDiffTime dc 0) $ \(i,_) ->
+            i `shouldBe` 0
+      prop "Config units = reverse part units" $ \(d,dc) -> do
+        let parts = reverse $ splitDiffTime dc d
+        not (null parts) ==>
+          forAll (elements $ zip (units dc) parts) $ \(du, (_,du')) ->
+            du `shouldBe` du'
+      prop "Residue part size < duration unit size" $ \(d,dc) -> do
+        let parts = reverse $ splitDiffTime dc d
+        not (null parts) ==>
+          forAll (elements $ zip (units dc) parts) $ \(du, (i,_)) ->
+            i `shouldSatisfy` (< size du)
+      prop "0 <= Duration maximum: correct parts sum" $ \(d,dc) ->
+        d >= 0 && d <= maxDuration dc ==> do
+          let factors = map product . inits . map size . units $ dc
+              parts   = reverse $ map fst $ splitDiffTime dc d
+          sum (zipWith (*) parts factors) `shouldBe` floor d
+
+instance Arbitrary DurationUnit where
+  arbitrary = DurUnit <$> smol arbitrary
+                      <*> smol (smol arbitrary)
+                      <*> arbitrary `suchThat` (> 0)
+    where smol = scale (`div` 3)
+
+instance Arbitrary DurationConfig where
+  arbitrary = DurConf <$> arbitrary
