@@ -75,13 +75,13 @@ spec = do
                             ]
           splits1 = splitDiffTime dconf diff1
       it "Correctly split 3700 seconds with custom duration config" $
-        map (second show) splits1 `shouldBe` [(1,"h"), (1,"m"), (42,"s")]
+        map (second short) splits1 `shouldBe` [(1,"h"), (1,"m"), (42,"s")]
       let diff2   = secondsToNominalDiffTime (60 * 60 * 17 + 42)
           splits2 = splitDiffTime naturalDurationConfig diff2
       it "Correctly split 17:00:42 in natural duration config" $
-        map (second show) splits2
+        map (second short) splits2
           `shouldBe` [(0,"y"), (0,"mo"), (0,"d"), (17,"h"), (0,"mi"), (42,"s")]
       let splits3 = splitDiffTime manDurationConfig diff2
       it "Correctly split 17:00:42 in man duration config" $
-        map (second show) splits3
+        map (second short) splits3
           `shouldBe` [(0,"y"), (0,"mo"), (2,"d"), (1,"h"), (0,"mi"), (42,"s")]

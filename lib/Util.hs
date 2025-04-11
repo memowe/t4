@@ -19,12 +19,11 @@ durations extract xs =
         pairDuration (ys, t1) (_, t2) = (, diffLocalTime t2 t1) <$> ys
 
 newtype DurationConfig  = DurConf { units :: [DurationUnit] }
+                                  deriving (Eq, Show)
 data    DurationUnit    = DurUnit { long  :: String
                                   , short :: String
                                   , size  :: Integer
-                                  } deriving Eq
-
-instance Show DurationUnit where show = short
+                                  } deriving (Eq, Show)
 
 naturalDurationConfig :: DurationConfig
 naturalDurationConfig = DurConf
