@@ -38,8 +38,10 @@ library
 executable t4
   import:             basics
   build-depends:      terminal-time-tracking-tool
-  hs-source-dirs:     app
-  main-is:            App.hs
+                    , optparse-applicative
+                    , mtl
+  hs-source-dirs:     t4-commands
+  main-is:            Commands.hs
 
 test-suite t4-test
   import:             basics
