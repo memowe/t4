@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
 module T4.DataSpec where
 
 import Test.Hspec
