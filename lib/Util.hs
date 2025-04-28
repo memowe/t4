@@ -55,7 +55,13 @@ splitDiffTime dc time = fst $ foldl step ([], floor time) (units dc)
           let (q, r) = i `quotRem` s
           in  ((r,du):xs, q)
 
-showDiffTime :: DurationConfig -> NominalDiffTime -> String
-showDiffTime dc = unwords . map showPairs . onlySignificant . splitDiffTime dc
+showDiffTimeSplits :: [(Integer, DurationUnit)] -> String
+showDiffTimeSplits = unwords . map showPair . onlySignificant
   where onlySignificant   = dropWhile $ (== 0) . fst
-        showPairs (i, du) = show i ++ short du
+        showPair (i, du)  = show i ++ short du
+
+showDiffTime :: DurationConfig -> NominalDiffTime -> String
+showDiffTime dc = showDiffTimeSplits . splitDiffTime dc
+
+showRoughDiffTime :: DurationConfig -> NominalDiffTime -> String
+showRoughDiffTime dc = showDiffTimeSplits . init . splitDiffTime dc
