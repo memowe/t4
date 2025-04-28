@@ -113,16 +113,30 @@ spec = do
           sum (zipWith (*) parts factors) `shouldBe` floor d
 
     describe "Difference split stringification" $ do
-      it "Correctly show 3700 seconds with custom duration config" $
-        showDiffTime dconf diff1 `shouldBe` "1h 1m 42s"
-      it "Correctly show 17:00:42 in natural duration config" $
-        showDiffTime naturalDurationConfig diff2 `shouldBe` "17h 0mi 42s"
-      it "Correctly show 17:00:42 in man duration config" $
-        showDiffTime manDurationConfig diff2 `shouldBe` "2d 1h 0mi 42s"
-      prop "Correct splitDiffTime words" $ \(d,dc) -> do
-        let splits  = dropWhile ((== 0) . fst) $ splitDiffTime dc d
-            swords  = map (\(i,s) -> show i ++ short s) splits
-        showDiffTime dc d `shouldBe` unwords swords
+      describe "Full stringification" $ do
+        it "Correctly show 3700 seconds with custom duration config" $
+          showDiffTime dconf diff1 `shouldBe` "1h 1m 42s"
+        it "Correctly show 17:00:42 in natural duration config" $
+          showDiffTime naturalDurationConfig diff2 `shouldBe` "17h 0mi 42s"
+        it "Correctly show 17:00:42 in man duration config" $
+          showDiffTime manDurationConfig diff2 `shouldBe` "2d 1h 0mi 42s"
+        prop "Correct splitDiffTime words" $ \(d,dc) -> do
+          let splits  = dropWhile ((== 0) . fst) $ splitDiffTime dc d
+              swords  = map (\(i,s) -> show i ++ short s) splits
+          showDiffTime dc d `shouldBe` unwords swords
+      describe "Rough diff time stringification" $ do
+        it "Correctly show 3700 seconds with custom duration config" $
+          showRoughDiffTime dconf diff1 `shouldBe` "1h 1m"
+        it "Correctly show 17:00:42 in natural duration config" $
+          showRoughDiffTime naturalDurationConfig diff2 `shouldBe` "17h 0mi"
+        it "Correctly show 17:00:42 in man duration config" $
+          showRoughDiffTime manDurationConfig diff2 `shouldBe` "2d 1h 0mi"
+        prop "Correct splitDiffTime words" $ \(d,dc) ->
+          not (null $ units dc) ==> do
+            let splits  = dropWhile ((== 0) . fst) $ init $ splitDiffTime dc d
+                swords  = map (\(i,s) -> show i ++ short s) splits
+            showRoughDiffTime dc d `shouldBe` unwords swords
+
 
 instance Arbitrary DurationUnit where
   arbitrary = DurUnit <$> smol arbitrary
