@@ -62,3 +62,6 @@ showDiffTimeSplits = unwords . map showPair . onlySignificant
 
 showDiffTime :: DurationConfig -> NominalDiffTime -> String
 showDiffTime dc = showDiffTimeSplits . splitDiffTime dc
+
+showRoughDiffTime :: DurationConfig -> NominalDiffTime -> String
+showRoughDiffTime dc = showDiffTimeSplits . init . splitDiffTime dc
