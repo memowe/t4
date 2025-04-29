@@ -1,5 +1,6 @@
 module Util where
 
+import T4.Data (SimpleLocalTime(SLT))
 import Data.List
 import Data.Foldable
 import Data.Bifunctor
@@ -65,3 +66,6 @@ showDiffTime dc = showDiffTimeSplits . splitDiffTime dc
 
 showRoughDiffTime :: DurationConfig -> NominalDiffTime -> String
 showRoughDiffTime dc = showDiffTimeSplits . init . splitDiffTime dc
+
+getCurrentSLT :: IO SimpleLocalTime
+getCurrentSLT = SLT . zonedTimeToLocalTime <$> getZonedTime

@@ -83,9 +83,6 @@ opts = info (commandParser <**> helper)
   <>  header    "t4 - terminal time tracking tool"
   )
 
-getCurrentSLT :: IO SimpleLocalTime
-getCurrentSLT = SLT . zonedTimeToLocalTime <$> getZonedTime
-
 addClock :: Clock -> IO ()
 addClock clock = do
   dd      <- getStorageDirectory
@@ -93,9 +90,9 @@ addClock clock = do
   writeDataToDir dd (clock : clocks)
 
 handle :: Command -> IO ()
-handle (CmdIn c ts) = do  cslt <- getCurrentSLT
+handle (CmdIn c ts) = do  cslt <- U.getCurrentSLT
                           addClock $ In cslt c ts
-handle CmdOut       = do  cslt <- getCurrentSLT
+handle CmdOut       = do  cslt <- U.getCurrentSLT
                           addClock $ Out cslt
 handle CmdStatus    = do  clocks <- getClocks
                           putStrLn $ case clocks of
