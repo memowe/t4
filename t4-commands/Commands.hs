@@ -46,7 +46,7 @@ commandParser = hsubparser
                                   <>  help    "Simple name of a category"
                                   )
                       )
-                <*> some
+                <*> many
                       ( argument str
                                   (   metavar "TAGS"
                                   <>  help "List of tags, separated by space"
