@@ -12,6 +12,7 @@ import Lens.Micro.Platform
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Concurrent
+import System.Process
 
 data Tick = Tick
             deriving Show
@@ -40,6 +41,7 @@ main = do
   void $ customMainWithDefaultVty (Just tickChan) t4App initState
 
   -- Cleanup
+  callCommand "clear"
   killThread tickThreadID
 
 t4App :: App T4State Tick ()

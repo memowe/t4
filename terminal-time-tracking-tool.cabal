@@ -49,6 +49,7 @@ executable t5
                     , vty
                     , brick
                     , microlens-platform
+                    , process
   hs-source-dirs:     t4-tui
   main-is:            TUI.hs
 
