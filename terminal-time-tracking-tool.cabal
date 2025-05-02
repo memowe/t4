@@ -6,6 +6,14 @@ license-file:         LICENSE
 author:               Mirko Westermeier
 maintainer:           mirko@westermeier.de
 build-type:           Simple
+synopsis:             t4: terminal time tracking tool
+homepage:             https://github.com/memowe/t4
+bug-reports:          https://github.com/memowe/t4/issues
+
+source-repository head
+  type:               git
+  branch:             main
+  location:           https://github.com/memowe/t4.git
 
 common basics
   default-language:   Haskell2010
