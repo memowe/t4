@@ -45,27 +45,27 @@ spec = do
     it "Correct clocks in second file"  $ cs2 `shouldBe` [c3]
 
     prop "Correct file name" $ \clock -> ioProperty $ do
-      filenames <- withSystemTempDirectory "t4" $ \tdir -> do
+      withSystemTempDirectory "t4" $ \tdir -> do
         writeDataToDir tdir [clock]
-        listDirectory tdir
-      return $ filenames === [fileName clock]
+        filenames <- listDirectory tdir
+        return $ filenames === [fileName clock]
 
     prop "Same file => same day" $ \clocks ->
       not (null clocks) ==> ioProperty $ do
-        fileClocks <- withSystemTempDirectory "t4" $ \tdir -> do
+        withSystemTempDirectory "t4" $ \tdir -> do
           writeDataToDir tdir clocks
-          listDirectory tdir >>= mapM (decodeFileThrow . (tdir </>))
-        return $
-          forAll (elements fileClocks) $ \rclocks ->
-            let sameDay = (== 1) . length . group . map getDay
-            in  rclocks `shouldSatisfy` sameDay
+          fileClocks <- listDirectory tdir >>= mapM (decodeFileThrow . (tdir </>))
+          return $
+            forAll (elements fileClocks) $ \rclocks ->
+              let sameDay = (== 1) . length . group . map getDay
+              in  rclocks `shouldSatisfy` sameDay
 
   context "Roundtrip" $ do
     prop "Clocks-YAML-Clocks" $ \clocks -> ioProperty $ do
-      loaded <- withSystemTempDirectory "t4" $ \tdir -> do
+      withSystemTempDirectory "t4" $ \tdir -> do
         writeDataToDir tdir clocks
-        loadDataFromDir tdir
-      return $ loaded === sort clocks
+        loaded <- loadDataFromDir tdir
+        return $ loaded === sort clocks
 
   context "Storage directory on disk" $ do
 
@@ -106,10 +106,10 @@ spec = do
           isStorageDirectory tdir
         isSD `shouldBe` False
       prop "T4 data -> OK" $ \clocks -> ioProperty $ do
-        isSD <- withSystemTempDirectory "ok-t4-data" $ \tdir -> do
+        withSystemTempDirectory "ok-t4-data" $ \tdir -> do
           writeDataToDir tdir clocks
-          isStorageDirectory tdir
-        isSD `shouldBe` True
+          isSD <- isStorageDirectory tdir
+          isSD `shouldBe` True
 
     describe "Actual storage directory" $ do
 
