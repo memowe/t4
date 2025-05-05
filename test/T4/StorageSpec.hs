@@ -23,18 +23,24 @@ spec = do
       c2 = Out  (simpleLocalTime 2001 2 3 4 5 7)
       c3 = In   (simpleLocalTime 2001 2 4 4 5 6) (Just "cat2") ["t2", "t3"]
 
+  context "File names" $ do
+    it "Simple example" $
+      fileName c1 `shouldBe` "2001-02-03.yml"
+    prop "Clock's day and a .yml ending" $ \c ->
+      fileName c `shouldBe` dateString (time c) <.> "yml"
+
   context "Loading data" $ do
     loaded <- runIO $ withSystemTempDirectory "t4" $ \tdir -> do
-      encodeFile (tdir </> "2001-02-03" <.> "yml") [c2, c1]
-      encodeFile (tdir </> "2001-02-04" <.> "yml") [c3]
+      encodeFile (tdir </> fileName c1) [c2, c1]
+      encodeFile (tdir </> fileName c3) [c3]
       loadDataFromDir tdir
     it "Loaded correct (sorted) clock data" $ loaded `shouldBe` [c1, c2, c3]
 
   context "Storing data" $ do
     (cs1, cs2) <- runIO $ withSystemTempDirectory "t4" $ \tdir -> do
       writeDataToDir tdir [c2, c1, c3]
-      cs1 <- decodeFileThrow (tdir </> "2001-02-03" <.> "yml")
-      cs2 <- decodeFileThrow (tdir </> "2001-02-04" <.> "yml")
+      cs1 <- decodeFileThrow (tdir </> fileName c1)
+      cs2 <- decodeFileThrow (tdir </> fileName c3)
       return (cs1, cs2)
     it "Correct clocks in first file"   $ cs1 `shouldBe` [c1, c2]
     it "Correct clocks in second file"  $ cs2 `shouldBe` [c3]
@@ -49,7 +55,7 @@ spec = do
     filenames <- withSystemTempDirectory "t4" $ \tdir -> do
       writeDataToDir tdir [clock]
       listDirectory tdir
-    return $ filenames === [dateString (time clock) <.> "yml"]
+    return $ filenames === [fileName clock]
 
   prop "Same file => same day" $ \clocks ->
     not (null clocks) ==> ioProperty $ do
