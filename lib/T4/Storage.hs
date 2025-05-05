@@ -23,6 +23,14 @@ writeDataToDir dir clocks = do
   forM_ (dayGroups clocks) $ \dayGroup -> do
     encodeFile (dir </> fileName (head dayGroup)) dayGroup
 
+addClockToDir :: FilePath -> Clock -> IO ()
+addClockToDir dir clock = do
+  let file = dir </> fileName clock
+  other <- ifM (doesFileExist file)
+                  (decodeFileThrow file)
+                  (return [])
+  writeDataToDir dir (clock : other)
+
 getStorageDirectoryPath :: IO FilePath
 getStorageDirectoryPath = do
   hd <- getHomeDirectory

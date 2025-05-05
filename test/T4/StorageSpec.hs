@@ -67,6 +67,40 @@ spec = do
         loaded <- loadDataFromDir tdir
         return $ loaded === sort clocks
 
+  context "Inserting single data into existing clock store" $ do
+
+    describe "Simple example" $ do
+      loaded <- runIO $ withSystemTempDirectory "t4" $ \tdir -> do
+        writeDataToDir tdir [c1, c3]
+        addClockToDir tdir c2
+        loadDataFromDir tdir
+      it "Added c2 to c1's day" $
+        loaded `shouldBe` [c1, c2, c3]
+
+    prop "Empty directory: just insert" $ \clock -> ioProperty $ do
+      withSystemTempDirectory "t4-empty" $ \tdir -> do
+        addClockToDir tdir clock
+        loaded <- loadDataFromDir tdir
+        return $ loaded === [clock]
+
+    prop "Non-empty, different file" $ \(clocks, clock) ->
+      not (null clocks) && getDay clock `notElem` (getDay <$> clocks) ==>
+        ioProperty $ do
+          withSystemTempDirectory "t4" $ \tdir -> do
+            writeDataToDir tdir clocks
+            addClockToDir tdir clock
+            loaded <- loadDataFromDir tdir
+            return $ loaded `shouldMatchList` clock : clocks
+
+    prop "Non-empty, same file" $ \(clocks, clock) ->
+      not (null clocks) && getDay clock `elem` (getDay <$> clocks) ==>
+        ioProperty $ do
+          withSystemTempDirectory "t4" $ \tdir -> do
+            writeDataToDir tdir clocks
+            addClockToDir tdir clock
+            loaded <- loadDataFromDir tdir
+            return $ loaded `shouldMatchList` clock : clocks
+
   context "Storage directory on disk" $ do
 
     describe "Storage directory name" $ do
