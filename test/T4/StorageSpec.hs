@@ -9,7 +9,6 @@ import T4.Storage
 import T4.DataSpec () -- Arbitrary Clock instance
 import Data.List
 import Data.Yaml
-import Data.Time
 import System.FilePath
 import System.Directory
 import System.IO.Temp
