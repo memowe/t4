@@ -9,7 +9,6 @@ import T4.Storage
 import T4.DataSpec () -- Arbitrary Clock instance
 import Data.List
 import Data.Yaml
-import Data.Time
 import System.FilePath
 import System.Directory
 import System.IO.Temp
@@ -23,42 +22,84 @@ spec = do
       c2 = Out  (simpleLocalTime 2001 2 3 4 5 7)
       c3 = In   (simpleLocalTime 2001 2 4 4 5 6) (Just "cat2") ["t2", "t3"]
 
+  context "File names" $ do
+    it "Simple example" $
+      fileName c1 `shouldBe` "2001-02-03.yml"
+    prop "Clock's day and a .yml ending" $ \c ->
+      fileName c `shouldBe` dateString (time c) <.> "yml"
+
   context "Loading data" $ do
     loaded <- runIO $ withSystemTempDirectory "t4" $ \tdir -> do
-      encodeFile (tdir </> "2001-02-03" <.> "yml") [c2, c1]
-      encodeFile (tdir </> "2001-02-04" <.> "yml") [c3]
+      encodeFile (tdir </> fileName c1) [c2, c1]
+      encodeFile (tdir </> fileName c3) [c3]
       loadDataFromDir tdir
     it "Loaded correct (sorted) clock data" $ loaded `shouldBe` [c1, c2, c3]
 
   context "Storing data" $ do
     (cs1, cs2) <- runIO $ withSystemTempDirectory "t4" $ \tdir -> do
       writeDataToDir tdir [c2, c1, c3]
-      cs1 <- decodeFileThrow (tdir </> "2001-02-03" <.> "yml")
-      cs2 <- decodeFileThrow (tdir </> "2001-02-04" <.> "yml")
+      cs1 <- decodeFileThrow (tdir </> fileName c1)
+      cs2 <- decodeFileThrow (tdir </> fileName c3)
       return (cs1, cs2)
     it "Correct clocks in first file"   $ cs1 `shouldBe` [c1, c2]
     it "Correct clocks in second file"  $ cs2 `shouldBe` [c3]
 
-  prop "Simple roundtrip Clocks-YAML-Clocks" $ \clocks -> ioProperty $ do
-    loaded <- withSystemTempDirectory "t4" $ \tdir -> do
-      writeDataToDir tdir clocks
-      loadDataFromDir tdir
-    return $ loaded === sort clocks
+    prop "Correct file name" $ \clock -> ioProperty $ do
+      withSystemTempDirectory "t4" $ \tdir -> do
+        writeDataToDir tdir [clock]
+        filenames <- listDirectory tdir
+        return $ filenames === [fileName clock]
 
-  prop "Correct file name" $ \clock -> ioProperty $ do
-    filenames <- withSystemTempDirectory "t4" $ \tdir -> do
-      writeDataToDir tdir [clock]
-      listDirectory tdir
-    return $ filenames === [dateString (time clock) <.> "yml"]
+    prop "Same file => same day" $ \clocks ->
+      not (null clocks) ==> ioProperty $ do
+        withSystemTempDirectory "t4" $ \tdir -> do
+          writeDataToDir tdir clocks
+          fileClocks <- listDirectory tdir >>= mapM (decodeFileThrow . (tdir </>))
+          return $
+            forAll (elements fileClocks) $ \rclocks ->
+              let sameDay = (== 1) . length . group . map getDay
+              in  rclocks `shouldSatisfy` sameDay
 
-  prop "Same file => same day" $ \clocks ->
-    not (null clocks) ==> ioProperty $ do
-      fileClocks <- withSystemTempDirectory "t4" $ \tdir -> do
+  context "Roundtrip" $ do
+    prop "Clocks-YAML-Clocks" $ \clocks -> ioProperty $ do
+      withSystemTempDirectory "t4" $ \tdir -> do
         writeDataToDir tdir clocks
-        listDirectory tdir >>= mapM (decodeFileThrow . (tdir </>))
-      return $
-        forAll (elements fileClocks) $ \rclocks ->
-          allEqual (localDay . getLocalTime . time <$> rclocks)
+        loaded <- loadDataFromDir tdir
+        return $ loaded === sort clocks
+
+  context "Inserting single data into existing clock store" $ do
+
+    describe "Simple example" $ do
+      loaded <- runIO $ withSystemTempDirectory "t4" $ \tdir -> do
+        writeDataToDir tdir [c1, c3]
+        addClockToDir tdir c2
+        loadDataFromDir tdir
+      it "Added c2 to c1's day" $
+        loaded `shouldBe` [c1, c2, c3]
+
+    prop "Empty directory: just insert" $ \clock -> ioProperty $ do
+      withSystemTempDirectory "t4-empty" $ \tdir -> do
+        addClockToDir tdir clock
+        loaded <- loadDataFromDir tdir
+        return $ loaded === [clock]
+
+    prop "Non-empty, different file" $ \(clocks, clock) ->
+      not (null clocks) && getDay clock `notElem` (getDay <$> clocks) ==>
+        ioProperty $ do
+          withSystemTempDirectory "t4" $ \tdir -> do
+            writeDataToDir tdir clocks
+            addClockToDir tdir clock
+            loaded <- loadDataFromDir tdir
+            return $ loaded `shouldMatchList` clock : clocks
+
+    prop "Non-empty, same file" $ \(clocks, clock) ->
+      not (null clocks) && getDay clock `elem` (getDay <$> clocks) ==>
+        ioProperty $ do
+          withSystemTempDirectory "t4" $ \tdir -> do
+            writeDataToDir tdir clocks
+            addClockToDir tdir clock
+            loaded <- loadDataFromDir tdir
+            return $ loaded `shouldMatchList` clock : clocks
 
   context "Storage directory on disk" $ do
 
@@ -99,10 +140,10 @@ spec = do
           isStorageDirectory tdir
         isSD `shouldBe` False
       prop "T4 data -> OK" $ \clocks -> ioProperty $ do
-        isSD <- withSystemTempDirectory "ok-t4-data" $ \tdir -> do
+        withSystemTempDirectory "ok-t4-data" $ \tdir -> do
           writeDataToDir tdir clocks
-          isStorageDirectory tdir
-        isSD `shouldBe` True
+          isSD <- isStorageDirectory tdir
+          isSD `shouldBe` True
 
     describe "Actual storage directory" $ do
 
@@ -123,10 +164,6 @@ spec = do
                         withEnv "T4DIR" tdir getStorageDirectory
           action `shouldThrow` \e ->
             "Not a t4 storage directory" `isPrefixOf` ioe_description e
-
-allEqual :: Eq a => [a] -> Bool
-allEqual []     = True
-allEqual (x:xs) = all (== x) xs
 
 withEnv :: String -> String -> IO a -> IO a
 withEnv key value action = do

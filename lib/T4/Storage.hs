@@ -10,6 +10,9 @@ import System.Directory
 import System.Environment
 import Control.Monad.Extra
 
+fileName :: Clock -> FilePath
+fileName clock = dateString (time clock) <.> "yml"
+
 loadDataFromDir :: FilePath -> IO [Clock]
 loadDataFromDir dir = do
   ymlFiles <- filter (".yml" `isSuffixOf`) <$> listDirectory dir
@@ -18,8 +21,15 @@ loadDataFromDir dir = do
 writeDataToDir :: FilePath -> [Clock] -> IO ()
 writeDataToDir dir clocks = do
   forM_ (dayGroups clocks) $ \dayGroup -> do
-    let day = dateString (time $ head dayGroup)
-    encodeFile (dir </> day <.> "yml") dayGroup
+    encodeFile (dir </> fileName (head dayGroup)) dayGroup
+
+addClockToDir :: FilePath -> Clock -> IO ()
+addClockToDir dir clock = do
+  let file = dir </> fileName clock
+  other <- ifM (doesFileExist file)
+                  (decodeFileThrow file)
+                  (return [])
+  writeDataToDir dir (clock : other)
 
 getStorageDirectoryPath :: IO FilePath
 getStorageDirectoryPath = do

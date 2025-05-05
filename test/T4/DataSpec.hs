@@ -118,9 +118,11 @@ spec = do
   context "Clock data aggregation" $ do
 
     context "Day groups" $ do
-      let sameDay = (== 1) . length . group . map getDay
       prop "Grouping in days" $ \clockLog ->
-        all sameDay (dayGroups clockLog)
+        not (null clockLog) ==>
+          forAll (elements $ dayGroups clockLog) $ \dayGroup ->
+            let sameDay = (== 1) . length . group . map getDay
+            in  dayGroup `shouldSatisfy` sameDay
 
     describe "Categories" $ do
       prop "Clock categories in allCategories" $ \clocks ->
