@@ -44,27 +44,28 @@ spec = do
     it "Correct clocks in first file"   $ cs1 `shouldBe` [c1, c2]
     it "Correct clocks in second file"  $ cs2 `shouldBe` [c3]
 
-  prop "Simple roundtrip Clocks-YAML-Clocks" $ \clocks -> ioProperty $ do
-    loaded <- withSystemTempDirectory "t4" $ \tdir -> do
-      writeDataToDir tdir clocks
-      loadDataFromDir tdir
-    return $ loaded === sort clocks
+    prop "Correct file name" $ \clock -> ioProperty $ do
+      filenames <- withSystemTempDirectory "t4" $ \tdir -> do
+        writeDataToDir tdir [clock]
+        listDirectory tdir
+      return $ filenames === [fileName clock]
 
-  prop "Correct file name" $ \clock -> ioProperty $ do
-    filenames <- withSystemTempDirectory "t4" $ \tdir -> do
-      writeDataToDir tdir [clock]
-      listDirectory tdir
-    return $ filenames === [fileName clock]
+    prop "Same file => same day" $ \clocks ->
+      not (null clocks) ==> ioProperty $ do
+        fileClocks <- withSystemTempDirectory "t4" $ \tdir -> do
+          writeDataToDir tdir clocks
+          listDirectory tdir >>= mapM (decodeFileThrow . (tdir </>))
+        return $
+          forAll (elements fileClocks) $ \rclocks ->
+            let sameDay = (== 1) . length . group . map getDay
+            in  rclocks `shouldSatisfy` sameDay
 
-  prop "Same file => same day" $ \clocks ->
-    not (null clocks) ==> ioProperty $ do
-      fileClocks <- withSystemTempDirectory "t4" $ \tdir -> do
+  context "Roundtrip" $ do
+    prop "Clocks-YAML-Clocks" $ \clocks -> ioProperty $ do
+      loaded <- withSystemTempDirectory "t4" $ \tdir -> do
         writeDataToDir tdir clocks
-        listDirectory tdir >>= mapM (decodeFileThrow . (tdir </>))
-      return $
-        forAll (elements fileClocks) $ \rclocks ->
-          let sameDay = (== 1) . length . group . map getDay
-          in  rclocks `shouldSatisfy` sameDay
+        loadDataFromDir tdir
+      return $ loaded === sort clocks
 
   context "Storage directory on disk" $ do
 
