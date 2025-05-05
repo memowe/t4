@@ -64,7 +64,8 @@ spec = do
         listDirectory tdir >>= mapM (decodeFileThrow . (tdir </>))
       return $
         forAll (elements fileClocks) $ \rclocks ->
-          allEqual (localDay . getLocalTime . time <$> rclocks)
+          let sameDay = (== 1) . length . group . map getDay
+          in  rclocks `shouldSatisfy` sameDay
 
   context "Storage directory on disk" $ do
 
@@ -129,10 +130,6 @@ spec = do
                         withEnv "T4DIR" tdir getStorageDirectory
           action `shouldThrow` \e ->
             "Not a t4 storage directory" `isPrefixOf` ioe_description e
-
-allEqual :: Eq a => [a] -> Bool
-allEqual []     = True
-allEqual (x:xs) = all (== x) xs
 
 withEnv :: String -> String -> IO a -> IO a
 withEnv key value action = do
