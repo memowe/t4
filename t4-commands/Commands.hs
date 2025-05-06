@@ -85,9 +85,8 @@ opts = info (commandParser <**> helper)
 
 addClock :: Clock -> IO ()
 addClock clock = do
-  dd      <- getStorageDirectory
-  clocks  <- loadDataFromDir dd
-  writeDataToDir dd (clock : clocks)
+  dd <- getStorageDirectory
+  addClockToDir dd clock
 
 handle :: Command -> IO ()
 handle (CmdIn c ts) = do  cslt <- U.getCurrentSLT
