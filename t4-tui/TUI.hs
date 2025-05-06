@@ -1,8 +1,11 @@
 module Main where
 
+import Completion
 import T4.Data
 import T4.Storage
 import Util
+import TUI.Widgets
+
 import Data.Time
 import Brick
 import Brick.BChan
@@ -22,6 +25,7 @@ data T4State = T4State
   , _clocks   :: [Clock]
   , _now      :: SimpleLocalTime
   , _durConf  :: DurationConfig
+  , _compl    :: CompletionInput String
   } deriving Show
 makeLenses ''T4State
 
@@ -31,7 +35,9 @@ main = do
   -- Prepare initial state
   dd    <- getStorageDirectory
   curr  <- getCurrentSLT
-  let initState = T4State dd [] curr manDurationConfig
+  let fooCompl    = Compl (words "foo bar baz") id
+      fooComplInp = ComplInput "fO0" fooCompl True "ba" Nothing
+      initState   = T4State dd [] curr manDurationConfig fooComplInp
 
   -- Prepare ticking thread
   tickChan      <- newBChan 42
@@ -60,22 +66,25 @@ initT4 = do
 
 drawT4 :: T4State -> [Widget ()]
 drawT4 state = [ui]
-  where ui = hBox [ box (lastClock (state^.clocks^?_last))
-                  , fill ' '
-                  , box (duration (state^.durConf) durPair)
-                  ]
-        durPair = do  c1 <- state^.clocks^?_last
-                      guard $ isIn c1
-                      let t1 = getLocalTime $ time c1
-                          t2 = getLocalTime $ state^.now
-                      return $ diffLocalTime t2 t1
-        box     = border . padLeftRight 2
 
-lastClock :: Maybe Clock -> Widget ()
-lastClock = str . maybe "no data" summary
+  where ui = border $ padLeftRight 2 $ vBox
+              [ header
+              , hBorder
+              , drawCompletionInput (state^.compl)
+              ]
 
-duration :: DurationConfig -> Maybe NominalDiffTime -> Widget ()
-duration dc = str . maybe "Not clocked in" (showDiffTime dc)
+        header      = vLimit 1 $ hBox
+                        [ lastClock (state^.clocks^?_last)
+                        , fill ' '
+                        , duration (state^.durConf) durPair
+                        ]
+        lastClock   = str . maybe "no data" summary
+        duration dc = str . maybe "Not clocked in" (showDiffTime dc)
+        durPair     = do  c1 <- state^.clocks^?_last
+                          guard $ isIn c1
+                          let t1 = getLocalTime $ time c1
+                              t2 = getLocalTime $ state^.now
+                          return $ diffLocalTime t2 t1
 
 handleEvent :: BrickEvent () Tick -> EventM () T4State ()
 handleEvent (AppEvent Tick) = do
