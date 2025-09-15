@@ -58,6 +58,7 @@ executable t5
                     , brick
                     , microlens-platform
                     , process
+  other-modules:      TUI.Widgets
   hs-source-dirs:     t4-tui
   main-is:            TUI.hs
 
