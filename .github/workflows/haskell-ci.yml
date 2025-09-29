@@ -1,65 +1,30 @@
-name: build, test, docs
-
 on: [push, workflow_dispatch]
 
 jobs:
 
-  # All in one job to boost runtime
   build_test_doc:
-    name: GHC ${{ matrix.ghc }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        ghc: ['9.6']
-
+    runs-on: ubuntu-latest
     steps:
-
-      - name: Checkout repository content
-        uses: actions/checkout@v4
-
-      - name: Cache cabal packages, store and dist-newstyle
-        uses: actions/cache@v4
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cabal/packages
             ~/.cabal/store
             dist-newstyle
-          key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal-project.freeze') }}
-          restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}
-
-      - name: Set up GHC ${{ matrix.ghc }}
-        uses: haskell-actions/setup@v2
-        id: setup
+          key: cabal-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal-project.freeze') }}
+          restore-keys: cabal-
+      - uses: haskell-actions/setup@v2
+      - run: cabal build --only-dependencies --enable-tests
+      - run: cabal build --enable-tests
+      - run: cabal test --test-show-details=streaming
+      - run: cabal haddock --builddir=haddock_build --haddock-hyperlinked-source --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs'
+      - run: mv $(find haddock_build -wholename '*doc/html/terminal-time-tracking-tool' | head -n 1) haddock_html
+      - uses: actions/upload-artifact@v4
         with:
-          ghc-version: ${{ matrix.ghc }}
-          cabal-version: 'latest'
-          cabal-update: true
-
-      - name: Install dependencies
-        run: cabal build --only-dependencies --enable-tests
-
-      - name: Build
-        run: cabal build --enable-tests
-
-      - name: Test
-        run: cabal test --test-show-details=streaming
-
-      - name: Build API docs
-        run: cabal haddock --builddir=haddock_build --haddock-hyperlinked-source --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs'
-
-      - name: Collect generated API docs
-        run: mv $(find haddock_build -wholename '*doc/html/terminal-time-tracking-tool' | head -n 1) haddock_html
-
-      - name: Store generated API docs
-        uses: actions/upload-artifact@v4
-        with:
-          name: t4 API docs (GHC ${{ matrix.ghc }} on ${{ matrix.os }})
+          name: t4 API docs
           path: haddock_html
-
-      - name: Store generated API docs as pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: haddock_html
 
@@ -74,6 +39,5 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
+      - uses: actions/deploy-pages@v4
         id: deploy
-        uses: actions/deploy-pages@v4
