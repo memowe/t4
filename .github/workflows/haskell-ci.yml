@@ -6,17 +6,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: haskell-actions/setup@v2
+        id: setup
+      - run: cabal configure --enable-tests && cabal build --dry-run
       - uses: actions/cache@v4
         with:
-          path: |
-            ~/.cabal/packages
-            ~/.cabal/store
-            dist-newstyle
-          key: cabal-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal-project.freeze') }}
+          path: ${{ steps.setup.outputs.cabal-store }}
+          key: cabal-${{ hashFiles('**/plan.json') }}
           restore-keys: cabal-
-      - uses: haskell-actions/setup@v2
-      - run: cabal build --only-dependencies --enable-tests
-      - run: cabal build --enable-tests
+      - run: cabal build --only-dependencies
+      - run: cabal build
       - run: cabal test --test-show-details=streaming
       - run: cabal haddock --builddir=haddock_build --haddock-hyperlinked-source --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs'
       - run: mv $(find haddock_build -wholename '*doc/html/terminal-time-tracking-tool' | head -n 1) haddock_html
