@@ -2,6 +2,7 @@ module T4.Storage where
 
 import T4.Data
 import Data.List
+import qualified Data.List.NonEmpty as NE
 import Data.Maybe
 import Data.Yaml
 import Text.Regex.TDFA
@@ -21,7 +22,7 @@ loadDataFromDir dir = do
 writeDataToDir :: FilePath -> [Clock] -> IO ()
 writeDataToDir dir clocks = do
   forM_ (dayGroups clocks) $ \dayGroup -> do
-    encodeFile (dir </> fileName (head dayGroup)) dayGroup
+    encodeFile (dir </> fileName (NE.head dayGroup)) dayGroup
 
 addClockToDir :: FilePath -> Clock -> IO ()
 addClockToDir dir clock = do

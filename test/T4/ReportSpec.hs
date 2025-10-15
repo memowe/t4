@@ -54,17 +54,15 @@ spec = do
           M.keys (tagDurations clocks)
             `shouldMatchList` nub (tags clock)
       prop "Category duration extraction" $ \(cx, cy) -> do
-        let clocks    = sort [cx, cy]
-            (c1, c2)  = (head clocks, last clocks)
+        let (c1, c2) = if cx <= cy then (cx, cy) else (cy, cx)
         isIn c1 && isJust (category c1) ==> do
           let cat   = fromJust (category c1)
               diff  = (diffLocalTime `on` getLocalTime . time) c2 c1
-          categoryDurations clocks ! cat `shouldBe` diff
+          categoryDurations [c1, c2] ! cat `shouldBe` diff
       prop "Tags duration extraction" $ \(cx, cy) -> do
-        let clocks    = sort [cx, cy]
-            (c1, c2)  = (head clocks, last clocks)
+        let (c1, c2) = if cx <= cy then (cx, cy) else (cy, cx)
         isIn c1 && not (null $ tags c1) ==> do
           let diff  = (diffLocalTime `on` getLocalTime . time) c2 c1
-              durs  = tagDurations clocks
+              durs  = tagDurations [c1, c2]
           forAll (elements $ tags c1) $ \tag ->
             durs ! tag `shouldBe` diff

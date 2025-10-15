@@ -53,11 +53,10 @@ spec = do
       not (null durs) ==> forAll (elements durs) (`shouldSatisfy` (>= 0))
 
     prop "Correct duration for single slots" $ \(x, y) -> do
-      let clocks    = sortOn snd [x, y] :: [([Int], LocalTime)]
-          (x1, x2)  = (head clocks, last clocks)
-      not (null $ fst x1) ==> do
-        let diff  = (diffLocalTime `on` snd) x2 x1
-            durs  = durations id clocks
+      let (a,b)   = if snd x <= snd y then (x,y) else (y,x :: ([Int], LocalTime))
+      not (null $ fst a) ==> do
+        let diff  = (diffLocalTime `on` snd) b a
+            durs  = durations id [a, b]
         forAll (elements $ M.keys durs) $ \val ->
           durs ! val `shouldBe` diff
 
