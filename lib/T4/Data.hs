@@ -4,6 +4,7 @@ import Data.Char
 import Data.Function
 import Data.Maybe
 import qualified Data.Text as T
+import qualified Data.List.NonEmpty as NE
 import Data.List.Extra
 import Data.Time
 import Data.Aeson
@@ -67,8 +68,8 @@ summary (In t mc ts)  = "IN (" ++ sltString t ++ ")" ++ catStr ++ tagsStr
   where catStr  = maybe "" ((" [" ++) . (++ "]")) mc
         tagsStr = concatMap (" #" ++) ts
 
-dayGroups :: [Clock] -> [[Clock]]
-dayGroups = groupOn getDay . sort
+dayGroups :: [Clock] -> [NE.NonEmpty Clock]
+dayGroups = map NE.fromList . groupOn getDay . sort
 
 allCategories :: [Clock] -> [Category]
 allCategories = nubOrd . mapMaybe category . filter isIn

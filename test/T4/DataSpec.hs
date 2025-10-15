@@ -7,7 +7,7 @@ import Test.QuickCheck.Instances.Time ()
 
 import T4.Data
 import Data.Char
-import Data.List
+import qualified Data.List.NonEmpty as NE
 import Data.Maybe
 import Data.Text (unpack, pack)
 import Text.Read (readMaybe)
@@ -121,7 +121,7 @@ spec = do
       prop "Grouping in days" $ \clockLog ->
         not (null clockLog) ==>
           forAll (elements $ dayGroups clockLog) $ \dayGroup ->
-            let sameDay = (== 1) . length . group . map getDay
+            let sameDay = (== 1) . length . NE.group . NE.map getDay
             in  dayGroup `shouldSatisfy` sameDay
 
     describe "Categories" $ do
