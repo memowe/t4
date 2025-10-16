@@ -51,6 +51,12 @@ executable t4
   hs-source-dirs:     t4-commands
   main-is:            Commands.hs
 
+executable t5
+  import:             basics
+  build-depends:      terminal-time-tracking-tool
+  hs-source-dirs:     t4-tui
+  main-is:            TUI.hs
+
 test-suite t4-test
   import:             basics
   ghc-options:        -Wno-orphans
