@@ -19,6 +19,8 @@ spec = do
         complMatch "bar" "foo bar baz" `shouldBe` True
       it "Not a substring" $
         complMatch "quux" "foo bar baz" `shouldBe` False
+      it "Case-insensitive" $
+        complMatch "bAr" "foo BaR baz" `shouldBe` True
       it "Reversed" $
         complMatch "bar" "foo rab baz" `shouldBe` False
       it "Subsequence with holes" $
@@ -60,7 +62,7 @@ spec = do
               forAll (elements suggestions) $ \sugg ->
                 complMatch str sugg `shouldBe` True
 
-      prop "Not-suggestions match not" $ \aitems ->
+      prop "Not-suggestions don't match" $ \aitems ->
         forAll (genShortSublists $ concat aitems) $ \str ->
           let nopes = aitems \\ complete (Compl aitems id) str
           in  not (null nopes) ==>
