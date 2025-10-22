@@ -57,7 +57,7 @@ executable t5
   hs-source-dirs:     t4-tui
   main-is:            TUI.hs
 
-test-suite t4-test
+test-suite library-test
   import:             basics
   ghc-options:        -Wno-orphans
   type:               exitcode-stdio-1.0
