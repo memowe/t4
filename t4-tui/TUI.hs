@@ -3,6 +3,8 @@ import T4.Storage
 import Util
 import Completion
 import Data.Maybe
+import Data.Function
+import Data.Time
 import qualified System.Console.Haskeline as H
 
 main :: IO ()
@@ -11,7 +13,7 @@ main = do
   clock <- lastMaybe <$> loadDataFromDir sdir
   showState clock
   newClock <- if isJust clock && isIn (fromJust clock)
-                then promptIn
+                then promptIn (time $ fromJust clock)
                 else promptOut
   case newClock of
     Nothing -> showState clock
@@ -21,13 +23,21 @@ main = do
 showState :: Maybe Clock -> IO ()
 showState = putStrLn . maybe "No clock data yet" summary
 
-promptIn :: IO (Maybe Clock)
-promptIn = do
+promptIn :: SimpleLocalTime -> IO (Maybe Clock)
+promptIn started = do
+  showSpent started
   choice <- run $ H.getInputChar "[o]ut - [c]hange - [q]uit: "
   case choice of
-    Just 'o'  -> Just . Out <$> getCurrentSLT
+    Just 'o'  -> showSpent started >> Just . Out <$> getCurrentSLT
     Just 'c'  -> Just <$> clockIn
     _         -> return Nothing
+
+showSpent :: SimpleLocalTime -> IO ()
+showSpent started = do
+  now <- getCurrentSLT
+  putStrLn $ "Spent: " ++ showDuration (now `minusTime` started)
+  where showDuration  = showRoughDiffTime naturalDurationConfig
+        minusTime     = diffLocalTime `on` getLocalTime
 
 promptOut :: IO (Maybe Clock)
 promptOut = do
