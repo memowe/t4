@@ -2,6 +2,8 @@ import T4.Data
 import T4.Storage
 import Util
 import Completion
+import Data.Char
+import Data.List
 import Data.Maybe
 import Data.Function
 import Data.Time
@@ -54,8 +56,9 @@ clockIn = do
   now   <- getCurrentSLT
   mc    <- runWithCompletion catsCompl $ H.getInputLine "Category: "
   mtags <- runWithCompletion tagsCompl $ H.getInputLine "Tags: "
-  return $ In now mc (parseTags mtags)
-  where parseTags = map (dropWhile (== '#')) . words . fromMaybe []
+  return $ In now (parseCat mc) (parseTags mtags)
+  where parseCat  = fmap $ dropWhile isSpace . dropWhileEnd isSpace
+        parseTags = map (dropWhile (== '#')) . words . fromMaybe []
 
 run :: H.InputT IO a -> IO a
 run = H.runInputTBehavior H.preferTerm H.defaultSettings
