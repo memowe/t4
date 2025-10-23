@@ -32,7 +32,7 @@ common basics
                     , yaml
                     , regex-tdfa
                     , text
-                    , brick
+                    , haskeline
 
 library
   import:             basics
