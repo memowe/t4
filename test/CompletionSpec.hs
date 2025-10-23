@@ -30,9 +30,6 @@ spec = do
       it "Correct chars, not enough" $
         complMatch "foo" "a f b o c d" `shouldBe` False
 
-    prop "Empty strings never match" $ \str ->
-      complMatch "" str `shouldBe` False
-
     prop "Subsequences match" $ forAll subSeqPairs $ \(sml, lrg) ->
       complMatch sml lrg `shouldBe` True
 
@@ -44,8 +41,8 @@ spec = do
 
     let items = ["foo bar", "foo baz", "qoux"]
         compl = Compl (Identity <$> items) runIdentity
-    it "Empty -> no suggestion" $
-      complete compl "" `shouldBe` []
+    it "Empty -> all suggestions" $
+      complete compl "" `shouldBe` (Identity <$> items)
     it "'o' -> 3/3" $
       complete compl "o" `shouldBe` (Identity <$> items)
     it "'f ba' -> 2/3" $

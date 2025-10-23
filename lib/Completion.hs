@@ -11,8 +11,7 @@ data Completion a = Compl
   }
 
 complMatch :: String -> String -> Bool
-complMatch "" = const False
-complMatch cs = (isSubsequenceOf `on` map toLower) cs
+complMatch = isSubsequenceOf `on` map toLower
 
 complete :: Completion a -> String -> [a]
 complete (Compl xs toStr) cs = filter (complMatch cs . toStr) xs
