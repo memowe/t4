@@ -21,5 +21,5 @@ haskelineCompletions c@(Compl _ toString) =
   map (HC.simpleCompletion . toString) . complete c
 
 haskelineCompletionFunc :: Monad m => Completion a -> HC.CompletionFunc m
-haskelineCompletionFunc compl (x, _) =
-  return ("", haskelineCompletions compl (reverse x))
+haskelineCompletionFunc =
+  HC.completeWord Nothing " " . (return .) . haskelineCompletions

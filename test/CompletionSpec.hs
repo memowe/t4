@@ -98,12 +98,21 @@ spec = do
 
     describe "Completion function transformation" $ do
 
-      prop "Completion function call with id monad" $
+      prop "Simple arbitrary completion" $
         forAll genMatchPairs $ \(compl, match) ->
           let complf = haskelineCompletionFunc compl
               result = complf (reverse match, "")
               compls = haskelineCompletions compl match
           in  runIdentity result `shouldBe` ("", compls)
+
+      describe "Examples with word completion" $ do
+        let compl     = Compl (words "foo bar baz") id
+            complf    = haskelineCompletionFunc compl
+            hcompl w  = HC.Completion w w True
+        it "First word" $ runIdentity (complf ("f", ""))
+          `shouldBe` ("", [hcompl "foo"])
+        it "Second word" $ runIdentity (complf ("ab oof", ""))
+          `shouldBe` (" oof", hcompl <$> ["bar", "baz"])
 
 subSeqPairs :: Arbitrary a => Gen ([a], [a])
 subSeqPairs = do
@@ -120,7 +129,9 @@ genShortSublists xs = do
   vectorOf len (elements $ nub xs)
 
 genCompletions :: Gen (Completion String)
-genCompletions = Compl <$> arbitrary <*> return id
+genCompletions = do
+  ws <- listOf $ listOf $ arbitrary `suchThat` (not.isSpace)
+  return $ Compl ws id
 
 notEmpty :: [a] -> Bool
 notEmpty = not . null
