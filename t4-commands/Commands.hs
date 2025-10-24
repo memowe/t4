@@ -7,7 +7,6 @@ import qualified Util as U
 import Data.List
 import Data.Map
 import Data.Time
-import Control.Monad
 import Options.Applicative
 
 data Command  = CmdIn { ccat  :: Maybe Category
@@ -17,8 +16,7 @@ data Command  = CmdIn { ccat  :: Maybe Category
               | CmdStatus
               | CmdCats
               | CmdTags
-              | CmdReport { crepCat   :: Bool
-                          , crepTags  :: Bool
+              | CmdReport { crepTags  :: Bool
                           , ordByLen  :: Bool
                           , natDur    :: Bool
                           , showSecs  :: Bool
@@ -53,28 +51,22 @@ commandParser = hsubparser
                                   )
                       )
         reportParser  =
-          correct <$> switch  (   long "categories"
-                              <>  short 'c'
-                              <>  help "Include categories in the report"
-                              )
-                  <*> switch  (   long "tags"
-                              <>  short 't'
-                              <>  help "Include tags in the report"
-                              )
-                  <*> switch  (   long "order-by-length"
-                              <>  short 'l'
-                              <>  help "Reports should be ordered by length"
-                              )
-                  <*> switch  (   long "natural-time"
-                              <>  short 'n'
-                              <>  help "Natural durations instead of man-days"
-                              )
-                  <*> switch  (   long "show-seconds"
-                              <>  short 's'
-                              <>  help "Show seconds"
-                              )
-          where correct False False = CmdReport True  True
-                correct c     t     = CmdReport c     t
+          CmdReport <$> switch  (   long "tags"
+                                <>  short 't'
+                                <>  help "Show tags instead of categories"
+                                )
+                    <*> switch  (   long "order-by-length"
+                                <>  short 'l'
+                                <>  help "Reports should be ordered by length"
+                                )
+                    <*> switch  (   long "natural-time"
+                                <>  short 'n'
+                                <>  help "Natural durations instead of man-days"
+                                )
+                    <*> switch  (   long "show-seconds"
+                                <>  short 's'
+                                <>  help "Show seconds"
+                                )
 
 opts :: ParserInfo Command
 opts = info (commandParser <**> helper)
@@ -101,19 +93,13 @@ handle CmdCats      = do  clocks <- getClocks
                           mapM_ putStrLn (sort $ allCategories clocks)
 handle CmdTags      = do  clocks <- getClocks
                           mapM_ putStrLn (sort $ allTags clocks)
-handle (CmdReport True True obl man secs) = do
+handle (CmdReport t obl man secs) = do
   clocks <- getClocks
-  putStrLn "Categories"
-  printDurMap 2 obl man secs $ categoryDurations clocks
-  putStrLn "Tags"
-  printDurMap 2 obl man secs $ tagDurations clocks
-handle (CmdReport c t obl man secs) = do
-  clocks <- getClocks
-  when c $ printDurMap 0 obl man secs $ categoryDurations clocks
-  when t $ printDurMap 0 obl man secs $ tagDurations clocks
+  let durMap = (if t then tagDurations else categoryDurations) clocks
+  printDurMap obl man secs durMap
 
-printDurMap :: Int -> Bool -> Bool -> Bool -> Map String NominalDiffTime -> IO ()
-printDurMap i o n s = mapM_ putStrLn . showDurMap i o n s
+printDurMap :: Bool -> Bool -> Bool -> Map String NominalDiffTime -> IO ()
+printDurMap o n s = mapM_ putStrLn . showDurMap o n s
 
 getClocks :: IO [Clock]
 getClocks = loadDataFromDir =<< getStorageDirectory
