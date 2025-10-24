@@ -68,7 +68,7 @@ clockIn = do
   mtags <- runWithCompletion tagsCompl $ H.getInputLine "Tags: "
   return $ In now (parseCat mc) (parseTags mtags)
   where parseCat  = fmap $ dropWhile isSpace . dropWhileEnd isSpace
-        parseTags = map (dropWhile (== '#')) . words . fromMaybe []
+        parseTags = map (dropWhile (== '#')) . words . fromMaybe ""
 
 report :: String -> Map String NominalDiffTime -> IO ()
 report prefix durMap = do
