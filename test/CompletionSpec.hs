@@ -130,7 +130,7 @@ genShortSublists xs = do
 
 genCompletions :: Gen (Completion String)
 genCompletions = do
-  ws <- listOf $ listOf $ arbitrary `suchThat` (not.isSpace)
+  ws <- listOf $ listOf $ arbitrary `suchThat` (not . isSpace)
   return $ Compl ws id
 
 notEmpty :: [a] -> Bool
