@@ -38,7 +38,7 @@ showSpent :: SimpleLocalTime -> IO ()
 showSpent started = do
   now <- getCurrentSLT
   putStrLn $ "Spent: " ++ showDuration (now `minusTime` started)
-  where showDuration  = showRoughDiffTime naturalDurationConfig
+  where showDuration  = showDiffTime naturalDurationConfig
         minusTime     = diffLocalTime `on` getLocalTime
 
 promptOut :: IO (Maybe Clock)
