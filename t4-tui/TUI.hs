@@ -1,11 +1,13 @@
 import T4.Data
 import T4.Storage
+import T4.Report
 import Util
 import Completion
 import Data.Char
 import Data.List
 import Data.Maybe
 import Data.Function
+import Data.Map (Map)
 import Data.Time
 import qualified System.Console.Haskeline as H
 
@@ -28,10 +30,14 @@ showState = putStrLn . maybe "No clock data yet" summary
 promptIn :: SimpleLocalTime -> IO (Maybe Clock)
 promptIn started = do
   showSpent started
-  choice <- run $ H.getInputChar "[o]ut - [c]hange - [q]uit: "
+  clocks <- loadDataFromDir =<< getStorageDirectory
+  choice <- run $ H.getInputChar
+    "[o]ut - [u]pdate - report [c]ategories - report [t]ags - [q]uit: "
   case choice of
     Just 'o'  -> showSpent started >> Just . Out <$> getCurrentSLT
-    Just 'c'  -> Just <$> clockIn
+    Just 'u'  -> Just <$> clockIn
+    Just 'c'  -> Nothing <$ report "Categories" (categoryDurations clocks)
+    Just 't'  -> Nothing <$ report "Tags"       (tagDurations clocks)
     _         -> return Nothing
 
 showSpent :: SimpleLocalTime -> IO ()
@@ -43,9 +49,13 @@ showSpent started = do
 
 promptOut :: IO (Maybe Clock)
 promptOut = do
-  choice <- run $ H.getInputChar "[i]n - [q]uit: "
+  clocks <- loadDataFromDir =<< getStorageDirectory
+  choice <- run $ H.getInputChar
+    "[i]n - report [c]ategories - report [t]ags - [q]uit: "
   case choice of
     Just 'i'  -> Just <$> clockIn
+    Just 'c'  -> Nothing <$ report "Categories" (categoryDurations clocks)
+    Just 't'  -> Nothing <$ report "Tags"       (tagDurations clocks)
     _         -> return Nothing
 
 clockIn :: IO Clock
@@ -59,6 +69,19 @@ clockIn = do
   return $ In now (parseCat mc) (parseTags mtags)
   where parseCat  = fmap $ dropWhile isSpace . dropWhileEnd isSpace
         parseTags = map (dropWhile (== '#')) . words . fromMaybe []
+
+report :: String -> Map String NominalDiffTime -> IO ()
+report prefix durMap = do
+  putStrLn "[s]econds - [l]ength-ordered - [n]atural time instead of man-days"
+  mOptions <- run $ H.getInputLine "Options: "
+  case mOptions of
+    Nothing       -> return ()
+    Just options  -> do
+      putStrLn prefix
+      let optSecs = 's' `elem` options
+          optLen  = 'l' `elem` options
+          optNat  = 'n' `elem` options
+      mapM_ putStrLn $ showDurMap optLen optNat optSecs durMap
 
 run :: H.InputT IO a -> IO a
 run = H.runInputTBehavior H.preferTerm H.defaultSettings
