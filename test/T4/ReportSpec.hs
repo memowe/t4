@@ -66,3 +66,30 @@ spec = do
               durs  = tagDurations [c1, c2]
           forAll (elements $ tags c1) $ \tag ->
             durs ! tag `shouldBe` diff
+
+    describe "Text reports" $ do
+      let testDM = M.fromList [ ("foo", secondsToNominalDiffTime 2*60*60)
+                              , ("bar", secondsToNominalDiffTime 8*60*60+42)]
+      it "Basic text report" $
+        showDurMap 0 False False False testDM
+          `shouldBe` ["bar: 1d 0h 0mi", "foo: 2h 0mi"]
+      it "Indented" $
+        showDurMap 3 False False False testDM
+          `shouldBe` ["   bar: 1d 0h 0mi", "   foo: 2h 0mi"]
+      it "Sorted by duration" $
+        showDurMap 0 True False False testDM
+          `shouldBe` ["foo: 2h 0mi", "bar: 1d 0h 0mi"]
+      it "Natural time instead of man-days" $
+        showDurMap 0 True True False testDM
+          `shouldBe` ["foo: 2h 0mi", "bar: 8h 0mi"]
+      it "With seconds" $
+        showDurMap 0 True False True testDM
+          `shouldBe` ["foo: 2h 0mi 0s", "bar: 1d 0h 0mi 42s"]
+
+      prop "# Entries = # Lines" $ \dm ->
+        length (showDurMap 0 False False False dm)
+          `shouldBe` M.size dm
+      prop "Arbitrary indentation" $ \indent dm ->
+        indent >= 0 && M.size dm > 0 ==>
+        forAll (elements $ showDurMap indent False False False dm) $ \line ->
+          replicate indent ' ' `isPrefixOf` line

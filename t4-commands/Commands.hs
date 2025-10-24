@@ -2,13 +2,13 @@ module Main where
 
 import T4.Data
 import T4.Storage
+import T4.Report
 import qualified Util as U
 import Data.List
+import Data.Map
 import Data.Time
-import Data.Map (Map, toList)
 import Control.Monad
 import Options.Applicative
-import T4.Report (categoryDurations, tagDurations)
 
 data Command  = CmdIn { ccat  :: Maybe Category
                       , ctags :: [Tag]
@@ -104,26 +104,19 @@ handle CmdTags      = do  clocks <- getClocks
 handle (CmdReport True True obl man secs) = do
   clocks <- getClocks
   putStrLn "Categories"
-  showDurMap 2 obl man secs $ categoryDurations clocks
+  printDurMap 2 obl man secs $ categoryDurations clocks
   putStrLn "Tags"
-  showDurMap 2 obl man secs $ tagDurations clocks
+  printDurMap 2 obl man secs $ tagDurations clocks
 handle (CmdReport c t obl man secs) = do
   clocks <- getClocks
-  when c $ showDurMap 0 obl man secs $ categoryDurations clocks
-  when t $ showDurMap 0 obl man secs $ tagDurations clocks
+  when c $ printDurMap 0 obl man secs $ categoryDurations clocks
+  when t $ printDurMap 0 obl man secs $ tagDurations clocks
+
+printDurMap :: Int -> Bool -> Bool -> Bool -> Map String NominalDiffTime -> IO ()
+printDurMap i o n s = mapM_ putStrLn . showDurMap i o n s
 
 getClocks :: IO [Clock]
 getClocks = loadDataFromDir =<< getStorageDirectory
-
-showDurMap :: Int -> Bool -> Bool -> Bool -> Map String NominalDiffTime -> IO ()
-showDurMap indent bySnd natural secs m = do
-  forM_ (ordPairs $ toList m) $ \(x, ndt) -> do
-    putStr    $ replicate indent ' '
-    putStrLn  $ x ++ ": " ++ showDT durConf ndt
-  where ordPairs  = if bySnd    then sortOn snd else sortOn fst
-        showDT    = if secs     then U.showDiffTime else U.showRoughDiffTime
-        durConf   = if natural  then U.naturalDurationConfig
-                                else U.manDurationConfig
 
 main :: IO ()
 main = do
