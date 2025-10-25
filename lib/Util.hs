@@ -69,3 +69,7 @@ showRoughDiffTime dc = showDiffTimeSplits . init . splitDiffTime dc
 
 getCurrentSLT :: IO SimpleLocalTime
 getCurrentSLT = SLT . zonedTimeToLocalTime <$> getZonedTime
+
+lastMaybe :: [a] -> Maybe a
+lastMaybe [] = Nothing
+lastMaybe xs = Just (last xs)

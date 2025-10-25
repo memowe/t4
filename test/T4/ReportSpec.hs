@@ -66,3 +66,22 @@ spec = do
               durs  = tagDurations [c1, c2]
           forAll (elements $ tags c1) $ \tag ->
             durs ! tag `shouldBe` diff
+
+    describe "Text reports" $ do
+      let testDM = M.fromList [ ("foo", secondsToNominalDiffTime 2*60*60)
+                              , ("bar", secondsToNominalDiffTime 8*60*60+42)]
+      it "Basic text report" $
+        showDurMap False False False testDM
+          `shouldBe` ["bar: 1d 0h 0mi", "foo: 2h 0mi"]
+      it "Sorted by duration" $
+        showDurMap True False False testDM
+          `shouldBe` ["foo: 2h 0mi", "bar: 1d 0h 0mi"]
+      it "Natural time instead of man-days" $
+        showDurMap True True False testDM
+          `shouldBe` ["foo: 2h 0mi", "bar: 8h 0mi"]
+      it "With seconds" $
+        showDurMap True False True testDM
+          `shouldBe` ["foo: 2h 0mi 0s", "bar: 1d 0h 0mi 42s"]
+      prop "# Entries = # Lines" $ \dm ->
+        length (showDurMap False False False dm)
+          `shouldBe` M.size dm

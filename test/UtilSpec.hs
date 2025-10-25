@@ -136,6 +136,16 @@ spec = do
                 swords  = map (\(i,s) -> show i ++ short s) splits
             showRoughDiffTime dc d `shouldBe` unwords swords
 
+  context "Safe list operations" $ do
+
+    describe "last" $ do
+      it "Empty list -> Nothing" $
+        lastMaybe ([] :: [Int]) `shouldBe` Nothing
+      prop "Singleton -> that element" $ \i ->
+        lastMaybe [i] `shouldBe` Just (i :: Int)
+      prop "Non-empty list -> compatible with last" $ \xs ->
+        not (null xs) ==>
+        lastMaybe xs `shouldBe` Just (last (xs :: [Int]))
 
 instance Arbitrary DurationUnit where
   arbitrary = DurUnit <$> smol arbitrary

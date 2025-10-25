@@ -32,7 +32,7 @@ common basics
                     , yaml
                     , regex-tdfa
                     , text
-                    , brick
+                    , haskeline
 
 library
   import:             basics
@@ -48,10 +48,16 @@ executable t4
   build-depends:      terminal-time-tracking-tool
                     , optparse-applicative
                     , mtl
-  hs-source-dirs:     t4-commands
+  hs-source-dirs:     exe-t4-commands
   main-is:            Commands.hs
 
-test-suite t4-test
+executable t5
+  import:             basics
+  build-depends:      terminal-time-tracking-tool
+  hs-source-dirs:     exe-t5-interactive
+  main-is:            TUI.hs
+
+test-suite library-test
   import:             basics
   ghc-options:        -Wno-orphans
   type:               exitcode-stdio-1.0
