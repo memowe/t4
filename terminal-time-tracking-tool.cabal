@@ -48,13 +48,13 @@ executable t4
   build-depends:      terminal-time-tracking-tool
                     , optparse-applicative
                     , mtl
-  hs-source-dirs:     t4-commands
+  hs-source-dirs:     exe-t4-commands
   main-is:            Commands.hs
 
 executable t5
   import:             basics
   build-depends:      terminal-time-tracking-tool
-  hs-source-dirs:     t4-tui
+  hs-source-dirs:     exe-t5-interactive
   main-is:            TUI.hs
 
 test-suite library-test
