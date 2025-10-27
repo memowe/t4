@@ -2,13 +2,12 @@ module Main where
 
 import T4.Data
 import T4.Storage
+import T4.Report
 import qualified Util as U
 import Data.List
+import Data.Map
 import Data.Time
-import Data.Map (Map, toList)
-import Control.Monad
 import Options.Applicative
-import T4.Report (categoryDurations, tagDurations)
 
 data Command  = CmdIn { ccat  :: Maybe Category
                       , ctags :: [Tag]
@@ -17,8 +16,7 @@ data Command  = CmdIn { ccat  :: Maybe Category
               | CmdStatus
               | CmdCats
               | CmdTags
-              | CmdReport { crepCat   :: Bool
-                          , crepTags  :: Bool
+              | CmdReport { crepTags  :: Bool
                           , ordByLen  :: Bool
                           , natDur    :: Bool
                           , showSecs  :: Bool
@@ -53,28 +51,22 @@ commandParser = hsubparser
                                   )
                       )
         reportParser  =
-          correct <$> switch  (   long "categories"
-                              <>  short 'c'
-                              <>  help "Include categories in the report"
-                              )
-                  <*> switch  (   long "tags"
-                              <>  short 't'
-                              <>  help "Include tags in the report"
-                              )
-                  <*> switch  (   long "order-by-length"
-                              <>  short 'l'
-                              <>  help "Reports should be ordered by length"
-                              )
-                  <*> switch  (   long "natural-time"
-                              <>  short 'n'
-                              <>  help "Natural durations instead of man-days"
-                              )
-                  <*> switch  (   long "show-seconds"
-                              <>  short 's'
-                              <>  help "Show seconds"
-                              )
-          where correct False False = CmdReport True  True
-                correct c     t     = CmdReport c     t
+          CmdReport <$> switch  (   long "tags"
+                                <>  short 't'
+                                <>  help "Show tags instead of categories"
+                                )
+                    <*> switch  (   long "order-by-length"
+                                <>  short 'l'
+                                <>  help "Reports should be ordered by length"
+                                )
+                    <*> switch  (   long "natural-time"
+                                <>  short 'n'
+                                <>  help "Natural durations instead of man-days"
+                                )
+                    <*> switch  (   long "show-seconds"
+                                <>  short 's'
+                                <>  help "Show seconds"
+                                )
 
 opts :: ParserInfo Command
 opts = info (commandParser <**> helper)
@@ -101,29 +93,16 @@ handle CmdCats      = do  clocks <- getClocks
                           mapM_ putStrLn (sort $ allCategories clocks)
 handle CmdTags      = do  clocks <- getClocks
                           mapM_ putStrLn (sort $ allTags clocks)
-handle (CmdReport True True obl man secs) = do
+handle (CmdReport t obl man secs) = do
   clocks <- getClocks
-  putStrLn "Categories"
-  showDurMap 2 obl man secs $ categoryDurations clocks
-  putStrLn "Tags"
-  showDurMap 2 obl man secs $ tagDurations clocks
-handle (CmdReport c t obl man secs) = do
-  clocks <- getClocks
-  when c $ showDurMap 0 obl man secs $ categoryDurations clocks
-  when t $ showDurMap 0 obl man secs $ tagDurations clocks
+  let durMap = (if t then tagDurations else categoryDurations) clocks
+  printDurMap obl man secs durMap
+
+printDurMap :: Bool -> Bool -> Bool -> Map String NominalDiffTime -> IO ()
+printDurMap o n s = mapM_ putStrLn . showDurMap o n s
 
 getClocks :: IO [Clock]
 getClocks = loadDataFromDir =<< getStorageDirectory
-
-showDurMap :: Int -> Bool -> Bool -> Bool -> Map String NominalDiffTime -> IO ()
-showDurMap indent bySnd natural secs m = do
-  forM_ (ordPairs $ toList m) $ \(x, ndt) -> do
-    putStr    $ replicate indent ' '
-    putStrLn  $ x ++ ": " ++ showDT durConf ndt
-  where ordPairs  = if bySnd    then sortOn snd else sortOn fst
-        showDT    = if secs     then U.showDiffTime else U.showRoughDiffTime
-        durConf   = if natural  then U.naturalDurationConfig
-                                else U.manDurationConfig
 
 main :: IO ()
 main = do
