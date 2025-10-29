@@ -68,6 +68,14 @@ summary (In t mc ts)  = "IN (" ++ sltString t ++ ")" ++ catStr ++ tagsStr
   where catStr  = maybe "" ((" [" ++) . (++ "]")) mc
         tagsStr = concatMap (" #" ++) ts
 
+type TimeWindow = (Maybe SimpleLocalTime, Maybe SimpleLocalTime)
+
+isInTimeWindow :: SimpleLocalTime -> TimeWindow -> Bool
+isInTimeWindow _ (Nothing, Nothing) = True
+isInTimeWindow t (Just l, Nothing)  = l <= t
+isInTimeWindow t (Nothing, Just u)  = t < u
+isInTimeWindow t (Just l, Just u)   = l <= t && t < u
+
 dayGroups :: [Clock] -> [NE.NonEmpty Clock]
 dayGroups = map NE.fromList . groupOn getDay . sort
 

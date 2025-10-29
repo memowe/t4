@@ -115,6 +115,52 @@ spec = do
         let yaml = encode (clock :: Clock)
         in  decodeThrow yaml `shouldBe` Just clock
 
+  context "Time Windows" $ do
+
+    describe "Predicate" $ do
+      let t1 = simpleLocalTime 2001 2 3 16 50 55
+          t2 = simpleLocalTime 2001 2 3 17 50 55
+          t3 = simpleLocalTime 2025 2 3 17 50 55
+
+      context "Closed" $ do
+        it "Simple inside example" $
+          t2 `isInTimeWindow` (Just t1, Just t3) `shouldBe` True
+        it "Simple outside example" $
+          t1 `isInTimeWindow` (Just t2, Just t3) `shouldBe` False
+        prop "Smaller: outside" $ \(a, b, c) -> a < b ==>
+          a `isInTimeWindow` (Just b, Just c) `shouldBe` False
+        prop "Greater: outside" $ \(a, b, c) -> a > c ==>
+          a `isInTimeWindow` (Just b, Just c) `shouldBe` False
+        prop "Inside" $ \(a, b, c) -> b < a && a < c ==>
+          a `isInTimeWindow` (Just b, Just c) `shouldBe` True
+        prop "Lower bound: inside" $ \(a, b) -> a < b ==>
+          a `isInTimeWindow` (Just a, Just b) `shouldBe` True
+        prop "Upper bound: outside" $ \(a, b) -> a > b ==>
+          a `isInTimeWindow` (Just b, Just a) `shouldBe` False
+
+      context "Half-open with upper bounds" $ do
+        it "Simple inside example" $
+          t1 `isInTimeWindow` (Nothing, Just t2) `shouldBe` True
+        it "Simple outside example" $
+          t2 `isInTimeWindow` (Nothing, Just t1) `shouldBe` False
+        prop "Smaller: inside" $ \(a, b) -> a < b ==>
+          a `isInTimeWindow` (Nothing, Just b) `shouldBe` True
+        prop "Greater or equal: outside" $ \(a, b) -> a >= b ==>
+          a `isInTimeWindow` (Nothing, Just b) `shouldBe` False
+
+      context "Half-open with lower bounds" $ do
+        it "Simple inside example" $
+          t2 `isInTimeWindow` (Just t2, Nothing) `shouldBe` True
+        it "Simple outside example" $
+          t1 `isInTimeWindow` (Just t2, Nothing) `shouldBe` False
+        prop "Smaller: outside" $ \(a, b) -> a < b ==>
+          a `isInTimeWindow` (Just b, Nothing) `shouldBe` False
+        prop "Greater or equal: inside" $ \(a, b) -> a >= b ==>
+          a `isInTimeWindow` (Just b, Nothing) `shouldBe` True
+
+      prop "Full-open window: everything is inside" $ \t ->
+        t `isInTimeWindow` (Nothing, Nothing)
+
   context "Clock data aggregation" $ do
 
     context "Day groups" $ do
