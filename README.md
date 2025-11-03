@@ -84,6 +84,8 @@ Spent: 4mi 15s
 OUT (2025-10-27 10:29:12)
 ```
 
+*Hint*: the interactive TUI uses auto completion when entering categories or tags. Try it using <kbd>Tab</kbd>.
+
 ## Author and license
 
 (c) 2025 Mirko Westermeier
