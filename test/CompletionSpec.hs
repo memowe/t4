@@ -7,7 +7,9 @@ import Test.QuickCheck
 import Completion
 import Data.Char
 import Data.String ()
-import Data.List
+import Data.List hiding ((\\))
+import Data.Set ((\\))
+import qualified Data.Set as S
 import Data.Functor.Identity
 import qualified System.Console.Haskeline.Completion as HC
 
@@ -39,18 +41,20 @@ spec = do
 
   context "Completion suggestion" $ do
 
-    let items = ["foo bar", "foo baz", "qoux"]
-        compl = Compl (Identity <$> items) runIdentity
+    let items = S.fromList ["foo bar", "foo baz", "qoux"]
+        compl = Compl items id
     it "Empty -> all suggestions" $
-      complete compl "" `shouldBe` (Identity <$> items)
+      complete compl "" `shouldBe` items
     it "'o' -> 3/3" $
-      complete compl "o" `shouldBe` (Identity <$> items)
+      complete compl "o" `shouldBe` items
     it "'f ba' -> 2/3" $
-      complete compl "f ba" `shouldBe` (Identity <$> ["foo bar", "foo baz"])
+      complete compl "f ba"
+        `shouldBe` S.fromList ["foo bar", "foo baz"]
     it "'f bar' -> 1/3" $
-      complete compl "f bar" `shouldBe` [Identity "foo bar"]
+      complete compl "f bar"
+        `shouldBe` S.singleton "foo bar"
     it "'f barz' -> 0/3" $
-      complete compl "f barz" `shouldBe` []
+      complete compl "f barz" `shouldBe` S.empty
 
     describe "Arbitrary completion" $ do
 
@@ -58,14 +62,14 @@ spec = do
         forAll (genShortSublists $ concat aitems) $ \str ->
           let suggestions = complete (Compl aitems id) str
           in  not (null suggestions) ==>
-              forAll (elements suggestions) $ \sugg ->
+              forAll (elements $ S.toList suggestions) $ \sugg ->
                 complMatch str sugg `shouldBe` True
 
       prop "Not-suggestions don't match" $ \aitems ->
         forAll (genShortSublists $ concat aitems) $ \str ->
           let nopes = aitems \\ complete (Compl aitems id) str
           in  not (null nopes) ==>
-              forAll (elements nopes) $ \nope ->
+              forAll (elements $ S.toList nopes) $ \nope ->
                 complMatch str nope `shouldBe` False
 
   context "Haskeline completion" $ do
@@ -73,7 +77,7 @@ spec = do
     describe "Completion list generation" $ do
 
       it "Basic transformation" $
-        haskelineCompletions (Compl ["foo"] id) "fo"
+        haskelineCompletions (Compl (S.singleton "foo") id) "fo"
           `shouldBe` [HC.Completion "foo" "foo" True]
 
       prop "Replacement = Display" $
@@ -94,7 +98,7 @@ spec = do
       prop "Same completion list" $
         forAll genMatchPairs $ \(compl, match) ->
           map HC.display (haskelineCompletions compl match)
-            `shouldBe` complete compl match
+            `shouldBe` S.toList (complete compl match)
 
     describe "Completion function transformation" $ do
 
@@ -106,7 +110,7 @@ spec = do
           in  runIdentity result `shouldBe` ("", compls)
 
       describe "Examples with word completion" $ do
-        let compl     = Compl (words "foo bar baz") id
+        let compl     = Compl (S.fromList $ words "foo bar baz") id
             complf    = haskelineCompletionFunc compl
             hcompl w  = HC.Completion w w True
         it "First word" $ runIdentity (complf ("f", ""))
@@ -131,24 +135,20 @@ genShortSublists xs = do
 genCompletions :: Gen (Completion String)
 genCompletions = do
   ws <- listOf $ listOf $ arbitrary `suchThat` (not . isSpace)
-  return $ Compl ws id
-
-notEmpty :: [a] -> Bool
-notEmpty = not . null
-noEmpty :: [[a]] -> Bool
-noEmpty = (&&) <$> notEmpty <*> all notEmpty
+  return $ Compl (S.fromList ws) id
 
 genMatches :: Completion a -> Gen String
 genMatches (Compl ws toString) = do
-  str <- (toString <$> elements ws) `suchThat` notEmpty
-  sublistOf str `suchThat` notEmpty
+  str <- (toString <$> elements (S.toList ws)) `suchThat` (not . null)
+  sublistOf str `suchThat` (not . null)
 
 genMatchPairs :: Gen (Completion String, String)
 genMatchPairs = do
-  compl <- genCompletions `suchThat` (noEmpty . complItems)
+  compl <- genCompletions `suchThat` (notEmpty . complItems)
   match <- genMatches compl
   return (compl, match)
+  where notEmpty = (&&) <$> not . null <*> (not . any null)
 
 instance Show (Completion a) where
   show (Compl items toString) =
-    "Compl (complItems=" ++ show (toString <$> items) ++ ")"
+    "Compl (complItems=" ++ show (toString <$> S.toList items) ++ ")"

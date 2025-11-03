@@ -4,8 +4,10 @@ import Data.Char
 import Data.Function
 import Data.Maybe
 import qualified Data.Text as T
-import qualified Data.List.NonEmpty as NE
-import Data.List.Extra
+import Data.Set (Set)
+import qualified Data.Set as S
+import Data.Map (Map)
+import qualified Data.Map as M
 import Data.Time
 import Data.Aeson
 import Data.Aeson.TH
@@ -39,7 +41,7 @@ type Tag      = String
 
 data Clock  = In  { time      :: SimpleLocalTime
                   , category  :: Maybe Category
-                  , tags      :: [Tag]
+                  , tags      :: Set Tag
                   }
             | Out { time      :: SimpleLocalTime
                   }
@@ -68,11 +70,14 @@ summary (In t mc ts)  = "IN (" ++ sltString t ++ ")" ++ catStr ++ tagsStr
   where catStr  = maybe "" ((" [" ++) . (++ "]")) mc
         tagsStr = concatMap (" #" ++) ts
 
-dayGroups :: [Clock] -> [NE.NonEmpty Clock]
-dayGroups = map NE.fromList . groupOn getDay . sort
+type Clocks = Set Clock
 
-allCategories :: [Clock] -> [Category]
-allCategories = nubOrd . mapMaybe category . filter isIn
+dayGroups :: Clocks -> Map Day Clocks
+dayGroups = foldr combine M.empty
+  where combine = M.insertWith S.union <$> getDay <*> S.singleton
 
-allTags :: [Clock] -> [Tag]
-allTags = nubOrd . concatMap tags . filter isIn
+allCategories :: Clocks -> Set Category
+allCategories = S.fromList . mapMaybe category . S.toList . S.filter isIn
+
+allTags :: Clocks -> Set Tag
+allTags = S.unions . S.map tags . S.filter isIn

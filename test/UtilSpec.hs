@@ -10,6 +10,8 @@ import Util
 import Data.List
 import Data.Function
 import Data.Bifunctor
+import Data.Set (Set)
+import qualified Data.Set as S
 import Data.Map ((!))
 import qualified Data.Map as M
 import Data.Time
@@ -23,11 +25,11 @@ spec = do
   context "Duration helper function" $ do
 
     describe "Example" $ do
-      let entries = [ (['1'],     lt 2017 7 17 15 42 0)
-                    , (['2','3'], lt 2017 7 17 17 42 0)
-                    , ([],        lt 2017 7 17 20 42 0)
-                    , (['3','3'], lt 2018 7 17 17 42 0)
-                    , ([],        lt 2021 7 17 14 42 0)
+      let entries = [ (S.fromList ['1'],      lt 2017 7 17 15 42 0)
+                    , (S.fromList ['2','3'],  lt 2017 7 17 17 42 0)
+                    , (S.fromList [],         lt 2017 7 17 20 42 0)
+                    , (S.fromList ['3','3'],  lt 2018 7 17 17 42 0)
+                    , (S.fromList [],         lt 2021 7 17 14 42 0)
                     ]
       it "Correct intervall lengths" $
         M.toList (durations id entries) `shouldMatchList`
@@ -38,22 +40,20 @@ spec = do
 
     describe "No usable inputs" $ do
       it "Empty input -> empty output" $
-        durations id ([] :: [([Int], LocalTime)])
-          `shouldBe` M.empty
+        durations id ([] :: [(Set Int, LocalTime)]) `shouldBe` M.empty
       prop "Singleton input -> empty output" $ \x ->
-        durations id [x :: ([Char], LocalTime)] `shouldBe` M.empty
+        durations id [x :: (Set Char, LocalTime)] `shouldBe` M.empty
 
-    prop "All the values" $ \xs -> not (null xs) ==> do
-      let vals  = nub $ concatMap fst (init $ sortOn snd xs)
-          dvals = M.keys $ durations id (xs :: [([Int], LocalTime)])
-      not (null dvals) ==> dvals `shouldMatchList` vals
+    prop "All the values" $ \xs -> not (null xs) ==>
+      let vals  = S.unions . map fst . init . sortOn snd $ xs
+      in  M.keysSet (durations id xs) `shouldBe` (vals :: Set Int)
 
     prop "Durations are non-negative" $ \xs -> do
-      let durs = M.elems $ durations id (xs :: [([Char], LocalTime)])
+      let durs = M.elems $ durations id (xs :: [(Set Char, LocalTime)])
       not (null durs) ==> forAll (elements durs) (`shouldSatisfy` (>= 0))
 
     prop "Correct duration for single slots" $ \(x, y) -> do
-      let (a,b)   = if snd x <= snd y then (x,y) else (y,x :: ([Int], LocalTime))
+      let (a,b)   = if snd x <= snd y then (x,y) else (y,x :: (Set Int, LocalTime))
       not (null $ fst a) ==> do
         let diff  = (diffLocalTime `on` snd) b a
             durs  = durations id [a, b]
@@ -61,7 +61,7 @@ spec = do
           durs ! val `shouldBe` diff
 
     prop "Order doesn't matter" $ \xs -> do
-      let durs = durations id (xs :: [([Int], LocalTime)])
+      let durs = durations id (xs :: [(Set Int, LocalTime)])
       forAll (shuffle xs) $ \ys -> durations id ys `shouldBe` durs
 
   context "Difference time splitting" $ do
@@ -135,17 +135,6 @@ spec = do
             let splits  = dropWhile ((== 0) . fst) $ init $ splitDiffTime dc d
                 swords  = map (\(i,s) -> show i ++ short s) splits
             showRoughDiffTime dc d `shouldBe` unwords swords
-
-  context "Safe list operations" $ do
-
-    describe "last" $ do
-      it "Empty list -> Nothing" $
-        lastMaybe ([] :: [Int]) `shouldBe` Nothing
-      prop "Singleton -> that element" $ \i ->
-        lastMaybe [i] `shouldBe` Just (i :: Int)
-      prop "Non-empty list -> compatible with last" $ \xs ->
-        not (null xs) ==>
-        lastMaybe xs `shouldBe` Just (last (xs :: [Int]))
 
 instance Arbitrary DurationUnit where
   arbitrary = DurUnit <$> smol arbitrary
