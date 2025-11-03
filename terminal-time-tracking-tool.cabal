@@ -39,7 +39,6 @@ library
   exposed-modules:    T4.Data
                     , T4.Storage
                     , T4.Report
-                    , Completion
                     , Util
   hs-source-dirs:     lib
 
@@ -70,7 +69,6 @@ test-suite library-test
   other-modules:      T4.DataSpec
                     , T4.StorageSpec
                     , T4.ReportSpec
-                    , CompletionSpec
                     , UtilSpec
   hs-source-dirs:     test
   main-is:            run-all-tests.hs

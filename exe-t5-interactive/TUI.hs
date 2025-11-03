@@ -2,15 +2,16 @@ import T4.Data
 import T4.Storage
 import T4.Report
 import Util
-import Completion
 import Data.Char
 import Data.List
 import Data.Maybe
 import Data.Function
+import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Map (Map)
 import Data.Time
 import qualified System.Console.Haskeline as H
+import qualified System.Console.Haskeline.Completion as HC
 
 main :: IO ()
 main = do
@@ -62,13 +63,11 @@ promptOut = do
 
 clockIn :: IO Clock
 clockIn = do
-  clocks <- loadDataFromDir =<< getStorageDirectory
-  let catsCompl = (`Compl` id) $ allCategories clocks
-      tagsCompl = (`Compl` id) $ allTags clocks
-  now   <- getCurrentSLT
-  mc    <- runWithCompletion catsCompl $ H.getInputLine "Category: "
-  mtags <- runWithCompletion tagsCompl $ H.getInputLine "Tags: "
-  return $ In now (parseCat mc) (parseTags mtags)
+  now     <- getCurrentSLT
+  clocks  <- loadDataFromDir =<< getStorageDirectory
+  mcat    <- inputCompl (allCategories clocks)  "Category: "
+  mtags   <- inputCompl (allTags clocks)        "Tags: "
+  return $ In now (parseCat mcat) (parseTags mtags)
   where parseCat  = fmap $ dropWhile isSpace . dropWhileEnd isSpace
         parseTags = S.fromList . map (dropWhile (== '#')) . words . fromMaybe ""
 
@@ -88,7 +87,9 @@ report prefix durMap = do
 run :: H.InputT IO a -> IO a
 run = H.runInputTBehavior H.preferTerm H.defaultSettings
 
-runWithCompletion :: Completion c -> H.InputT IO a -> IO a
-runWithCompletion compl = H.runInputTBehavior H.preferTerm settings
-  where settings  = (H.defaultSettings :: H.Settings IO) {H.complete = hcompl}
-        hcompl    = haskelineCompletionFunc compl
+inputCompl :: Set String -> String -> IO (Maybe String)
+inputCompl items = H.runInputTBehavior H.preferTerm settings . H.getInputLine
+  where settings = (H.defaultSettings :: H.Settings IO) {H.complete = complete}
+        complete = HC.completeWord Nothing " " (return . S.toList . compls)
+        compls s = S.map HC.simpleCompletion $ S.filter (s `isPrefOf`) items
+        isPrefOf = isPrefixOf `on` map toLower
