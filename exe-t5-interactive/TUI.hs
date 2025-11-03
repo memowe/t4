@@ -7,6 +7,7 @@ import Data.Char
 import Data.List
 import Data.Maybe
 import Data.Function
+import qualified Data.Set as S
 import Data.Map (Map)
 import Data.Time
 import qualified System.Console.Haskeline as H
@@ -14,7 +15,7 @@ import qualified System.Console.Haskeline as H
 main :: IO ()
 main = do
   sdir  <- getStorageDirectory
-  clock <- lastMaybe <$> loadDataFromDir sdir
+  clock <- findMax <$> loadDataFromDir sdir
   showState clock
   newClock <- if isJust clock && isIn (fromJust clock)
                 then promptIn (time $ fromJust clock)
@@ -23,6 +24,7 @@ main = do
     Nothing -> showState clock
     Just c  -> do addClockToDir sdir c
                   showState (Just c)
+  where findMax = fmap fst . S.maxView
 
 showState :: Maybe Clock -> IO ()
 showState = putStrLn . maybe "No clock data yet" summary
@@ -68,7 +70,7 @@ clockIn = do
   mtags <- runWithCompletion tagsCompl $ H.getInputLine "Tags: "
   return $ In now (parseCat mc) (parseTags mtags)
   where parseCat  = fmap $ dropWhile isSpace . dropWhileEnd isSpace
-        parseTags = map (dropWhile (== '#')) . words . fromMaybe ""
+        parseTags = S.fromList . map (dropWhile (== '#')) . words . fromMaybe ""
 
 report :: String -> Map String NominalDiffTime -> IO ()
 report prefix durMap = do

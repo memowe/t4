@@ -7,9 +7,9 @@ import Test.QuickCheck
 import T4.Data
 import T4.Report
 import T4.DataSpec () -- Arbitrary Clock instance
-import Data.List
 import Data.Function
 import Data.Maybe
+import qualified Data.Set as S
 import Data.Map ((!))
 import qualified Data.Map as M
 import Data.Time
@@ -21,12 +21,13 @@ spec = do
 
     describe "Example" $ do
       let slt     = simpleLocalTime
-          clocks  = [ In  (slt 2017 11 23 16 42 23) (Just "c1") ["t1", "t2"]
-                    , Out (slt 2017 11 23 17 42 23)
-                    , In  (slt 2018 11 23 17 42 23) (Just "c2") ["t2"]
-                    , In  (slt 2018 11 24 17 42 23) (Just "c3") ["t3"]
-                    , Out (slt 2018 11 24 17 43 5)
-                    ]
+          clocks  = S.fromList
+            [ In  (slt 2017 11 23 16 42 23) (Just "c1") (S.fromList ["t1", "t2"])
+            , Out (slt 2017 11 23 17 42 23)
+            , In  (slt 2018 11 23 17 42 23) (Just "c2") (S.fromList ["t2"])
+            , In  (slt 2018 11 24 17 42 23) (Just "c3") (S.fromList ["t3"])
+            , Out (slt 2018 11 24 17 43 5)
+            ]
       it "Correct category durations" $
         M.toList (categoryDurations clocks) `shouldMatchList`
           [ ("c1", secondsToNominalDiffTime (60*60))
@@ -42,29 +43,28 @@ spec = do
 
     describe "Extraction functions" $ do
       prop "Category extraction" $ \(cx, cy) -> do
-        let clocks  = [cx, cy]
+        let clocks  = S.fromList [cx, cy]
             clock   = minimum clocks
         isIn clock && isJust (category clock) ==> do
           let cat = fromJust (category clock)
-          M.keys (categoryDurations clocks) `shouldBe` [cat]
+          M.keysSet (categoryDurations clocks) `shouldBe` S.singleton cat
       prop "Tags extraction" $ \(cx, cy) -> do
-        let clocks  = [cx, cy]
+        let clocks  = S.fromList [cx, cy]
             clock   = minimum clocks
         isIn clock ==>
-          M.keys (tagDurations clocks)
-            `shouldMatchList` nub (tags clock)
+          M.keysSet (tagDurations clocks) `shouldBe` tags clock
       prop "Category duration extraction" $ \(cx, cy) -> do
         let (c1, c2) = if cx <= cy then (cx, cy) else (cy, cx)
         isIn c1 && isJust (category c1) ==> do
           let cat   = fromJust (category c1)
               diff  = (diffLocalTime `on` getLocalTime . time) c2 c1
-          categoryDurations [c1, c2] ! cat `shouldBe` diff
+          categoryDurations (S.fromList [c1, c2]) ! cat `shouldBe` diff
       prop "Tags duration extraction" $ \(cx, cy) -> do
         let (c1, c2) = if cx <= cy then (cx, cy) else (cy, cx)
         isIn c1 && not (null $ tags c1) ==> do
           let diff  = (diffLocalTime `on` getLocalTime . time) c2 c1
-              durs  = tagDurations [c1, c2]
-          forAll (elements $ tags c1) $ \tag ->
+              durs  = tagDurations $ S.fromList [c1, c2]
+          forAll (elements $ S.toList $ tags c1) $ \tag ->
             durs ! tag `shouldBe` diff
 
     describe "Text reports" $ do

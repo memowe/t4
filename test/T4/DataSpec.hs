@@ -7,9 +7,10 @@ import Test.QuickCheck.Instances.Time ()
 
 import T4.Data
 import Data.Char
-import qualified Data.List.NonEmpty as NE
 import Data.Maybe
 import Data.Text (unpack, pack)
+import qualified Data.Set as S
+import qualified Data.Map as M
 import Text.Read (readMaybe)
 import Text.ParserCombinators.ReadP
 import Data.Yaml
@@ -67,8 +68,8 @@ spec = do
 
   context "Clock in/out data" $ do
     let theTime   = simpleLocalTime 2017 11 23 17 42 37
-        cIn       = In theTime (Just "foo") ["bar", "baz"]
-        cInNoCat  = In theTime Nothing      ["bar", "baz"]
+        cIn       = In theTime (Just "foo") (S.fromList ["bar", "baz"])
+        cInNoCat  = In theTime Nothing      (S.fromList ["bar", "baz"])
         cOut      = Out theTime
 
     describe "Predicates" $ do
@@ -120,36 +121,39 @@ spec = do
     context "Day groups" $ do
       prop "Grouping in days" $ \clockLog ->
         not (null clockLog) ==>
-          forAll (elements $ dayGroups clockLog) $ \dayGroup ->
-            let sameDay = (== 1) . length . NE.group . NE.map getDay
-            in  dayGroup `shouldSatisfy` sameDay
+        forAll (elements $ M.toList $ dayGroups clockLog) $ \(d, cs) ->
+          forAll (elements $ S.toList cs) $ \c ->
+            getDay c `shouldBe` d
 
     describe "Categories" $ do
       prop "Clock categories in allCategories" $ \clocks ->
-        let clockIns    = filter isIn clocks
-            categories  = mapMaybe category clockIns
+        let clockIns    = S.filter isIn clocks
+            categories  = mapMaybe category (S.toList clockIns)
         in  not (null categories) ==>
             forAll (elements categories) $ \cat ->
-              cat `elem` allCategories clocks
+              cat `S.member` allCategories clocks
       prop "allCategories in clocks" $ \clocks ->
         let categories = allCategories clocks
         in  not (null categories) ==>
-            forAll (elements categories) $ \cat ->
-              cat `elem` mapMaybe category (filter isIn clocks)
+            forAll (elements $ S.toList categories) $ \cat ->
+              let clockIns  = S.filter isIn clocks
+              in  cat `elem` mapMaybe category (S.toList clockIns)
 
     describe "Tags" $ do
       prop "Clock tags in allTags" $ \clocks ->
-        let clockIns = filter isIn clocks
+        let clockIns = S.filter isIn clocks
         in  not (null clockIns) ==>
-            forAll (elements clockIns) $ \clock ->
-              not (null $ tags clock) ==>
-              forAll (elements $ tags clock) $ \tag ->
-                tag `elem` allTags clocks
+            forAll (elements $ S.toList clockIns) $ \clock ->
+              let cTags = tags clock
+              in  not (null cTags) ==>
+              forAll (elements $ S.toList cTags) $ \tag ->
+                tag `S.member` allTags clocks
       prop "allTags in clocks" $ \clocks ->
         let theTags = allTags clocks
         in  not (null theTags) ==>
-            forAll (elements theTags) $ \tag ->
-              tag `elem` concatMap tags (filter isIn clocks)
+            forAll (elements $ S.toList theTags) $ \tag ->
+              let cTags = S.unions . S.map tags . S.filter isIn $ clocks
+              in  tag `S.member` cTags
 
 instance Read SimpleLocalTime where
   readsPrec _ = readP_to_S $ do
@@ -170,6 +174,8 @@ instance Arbitrary SimpleLocalTime where
 
 instance Arbitrary Clock where
   arbitrary = oneof
-    [ In  <$> arbitrary <*> arbitrary <*> listOf arbitrary
+    [ In  <$> arbitrary
+          <*> arbitrary
+          <*> (S.fromList <$> listOf arbitrary)
     , Out <$> arbitrary
     ]

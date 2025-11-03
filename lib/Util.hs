@@ -3,21 +3,20 @@ module Util where
 import T4.Data (SimpleLocalTime(SLT))
 import Data.List
 import Data.Foldable
-import Data.Bifunctor
+import Data.Set (Set)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Time
 
 durations :: (Ord a, Show a, Foldable f)
-          => (entry -> ([a], LocalTime))
+          => (entry -> (Set a, LocalTime))
           -> f entry
           -> Map a NominalDiffTime
 durations extract xs =
-  let entries = sortOn snd $ extract' <$> toList xs
-      durs    = concat $ zipWith pairDuration entries (drop 1 entries)
-  in  foldr (uncurry $ M.insertWith (+)) M.empty durs
-  where extract' = first nub . extract
-        pairDuration (ys, t1) (_, t2) = (, diffLocalTime t2 t1) <$> ys
+  let entries = sortOn snd $ extract <$> toList xs
+      durs    = zipWith pairDur entries (drop 1 entries)
+  in  foldr (M.unionWith (+)) M.empty durs
+  where pairDur (ys, t1) (_, t2) = M.fromSet (const $ diffLocalTime t2 t1) ys
 
 newtype DurationConfig  = DurConf { units :: [DurationUnit] }
                                   deriving (Eq, Show)
@@ -69,7 +68,3 @@ showRoughDiffTime dc = showDiffTimeSplits . init . splitDiffTime dc
 
 getCurrentSLT :: IO SimpleLocalTime
 getCurrentSLT = SLT . zonedTimeToLocalTime <$> getZonedTime
-
-lastMaybe :: [a] -> Maybe a
-lastMaybe [] = Nothing
-lastMaybe xs = Just (last xs)

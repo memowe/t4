@@ -2,8 +2,8 @@ module T4.Storage where
 
 import T4.Data
 import Data.List
-import qualified Data.List.NonEmpty as NE
 import Data.Maybe
+import qualified Data.Set as S
 import Data.Yaml
 import Text.Regex.TDFA
 import System.FilePath
@@ -14,23 +14,23 @@ import Control.Monad.Extra
 fileName :: Clock -> FilePath
 fileName clock = dateString (time clock) <.> "yml"
 
-loadDataFromDir :: FilePath -> IO [Clock]
+loadDataFromDir :: FilePath -> IO Clocks
 loadDataFromDir dir = do
   ymlFiles <- filter (".yml" `isSuffixOf`) <$> listDirectory dir
-  sort <$> concatMapM decodeFileThrow ((dir </>) <$> ymlFiles)
+  S.fromList <$> concatMapM decodeFileThrow ((dir </>) <$> ymlFiles)
 
-writeDataToDir :: FilePath -> [Clock] -> IO ()
+writeDataToDir :: FilePath -> Clocks -> IO ()
 writeDataToDir dir clocks = do
   forM_ (dayGroups clocks) $ \dayGroup -> do
-    encodeFile (dir </> fileName (NE.head dayGroup)) dayGroup
+    encodeFile (dir </> fileName (S.findMin dayGroup)) dayGroup
 
 addClockToDir :: FilePath -> Clock -> IO ()
 addClockToDir dir clock = do
   let file = dir </> fileName clock
-  other <- ifM (doesFileExist file)
-                  (decodeFileThrow file)
-                  (return [])
-  writeDataToDir dir (clock : other)
+  other <- S.fromList <$> ifM (doesFileExist file)
+                            (decodeFileThrow file)
+                            (return [])
+  writeDataToDir dir $ S.insert clock other
 
 getStorageDirectoryPath :: IO FilePath
 getStorageDirectoryPath = do

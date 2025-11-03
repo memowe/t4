@@ -8,6 +8,7 @@ import T4.Data
 import T4.Storage
 import T4.DataSpec () -- Arbitrary Clock instance
 import Data.List
+import qualified Data.Set as S
 import Data.Yaml
 import System.FilePath
 import System.Directory
@@ -18,9 +19,9 @@ import GHC.IO.Exception
 spec :: Spec
 spec = do
 
-  let c1 = In   (simpleLocalTime 2001 2 3 4 5 6) (Just "cat1") ["t1", "t2"]
+  let c1 = In   (simpleLocalTime 2001 2 3 4 5 6) (Just "cat1") (S.fromList ["t1", "t2"])
       c2 = Out  (simpleLocalTime 2001 2 3 4 5 7)
-      c3 = In   (simpleLocalTime 2001 2 4 4 5 6) (Just "cat2") ["t2", "t3"]
+      c3 = In   (simpleLocalTime 2001 2 4 4 5 6) (Just "cat2") (S.fromList ["t2", "t3"])
 
   context "File names" $ do
     it "Simple example" $
@@ -33,11 +34,11 @@ spec = do
       encodeFile (tdir </> fileName c1) [c2, c1]
       encodeFile (tdir </> fileName c3) [c3]
       loadDataFromDir tdir
-    it "Loaded correct (sorted) clock data" $ loaded `shouldBe` [c1, c2, c3]
+    it "Loaded correct (sorted) clock data" $ loaded `shouldBe` S.fromList [c1, c2, c3]
 
   context "Storing data" $ do
     (cs1, cs2) <- runIO $ withSystemTempDirectory "t4" $ \tdir -> do
-      writeDataToDir tdir [c2, c1, c3]
+      writeDataToDir tdir $ S.fromList [c2, c1, c3]
       cs1 <- decodeFileThrow (tdir </> fileName c1)
       cs2 <- decodeFileThrow (tdir </> fileName c3)
       return (cs1, cs2)
@@ -46,9 +47,9 @@ spec = do
 
     prop "Correct file name" $ \clock -> ioProperty $ do
       withSystemTempDirectory "t4" $ \tdir -> do
-        writeDataToDir tdir [clock]
+        writeDataToDir tdir $ S.singleton clock
         filenames <- listDirectory tdir
-        return $ filenames === [fileName clock]
+        filenames `shouldBe` [fileName clock]
 
     prop "Same file => same day" $ \clocks ->
       not (null clocks) ==> ioProperty $ do
@@ -65,41 +66,41 @@ spec = do
       withSystemTempDirectory "t4" $ \tdir -> do
         writeDataToDir tdir clocks
         loaded <- loadDataFromDir tdir
-        return $ loaded === sort clocks
+        loaded `shouldBe` clocks
 
   context "Inserting single data into existing clock store" $ do
 
     describe "Simple example" $ do
       loaded <- runIO $ withSystemTempDirectory "t4" $ \tdir -> do
-        writeDataToDir tdir [c1, c3]
+        writeDataToDir tdir $ S.fromList [c1, c3]
         addClockToDir tdir c2
         loadDataFromDir tdir
       it "Added c2 to c1's day" $
-        loaded `shouldBe` [c1, c2, c3]
+        loaded `shouldBe` S.fromList [c1, c2, c3]
 
     prop "Empty directory: just insert" $ \clock -> ioProperty $ do
       withSystemTempDirectory "t4-empty" $ \tdir -> do
         addClockToDir tdir clock
         loaded <- loadDataFromDir tdir
-        return $ loaded === [clock]
+        loaded `shouldBe` S.singleton clock
 
     prop "Non-empty, different file" $ \(clocks, clock) ->
-      not (null clocks) && getDay clock `notElem` (getDay <$> clocks) ==>
+      not (null clocks) && getDay clock `notElem` S.map getDay clocks ==>
         ioProperty $ do
           withSystemTempDirectory "t4" $ \tdir -> do
             writeDataToDir tdir clocks
             addClockToDir tdir clock
             loaded <- loadDataFromDir tdir
-            return $ loaded `shouldMatchList` clock : clocks
+            loaded `shouldBe` S.insert clock clocks
 
     prop "Non-empty, same file" $ \(clocks, clock) ->
-      not (null clocks) && getDay clock `elem` (getDay <$> clocks) ==>
+      not (null clocks) && getDay clock `elem` S.map getDay clocks ==>
         ioProperty $ do
           withSystemTempDirectory "t4" $ \tdir -> do
             writeDataToDir tdir clocks
             addClockToDir tdir clock
             loaded <- loadDataFromDir tdir
-            return $ loaded `shouldMatchList` clock : clocks
+            loaded `shouldBe` S.insert clock clocks
 
   context "Storage directory on disk" $ do
 
@@ -158,6 +159,7 @@ spec = do
         checks `shouldBe` (False, True, True, True)
 
       after_ (unsetEnv "T4DIR") $ -- because withEnv gets interrupted
+        
         it "Not a storage directory -> die" $ do
           let action = withSystemTempDirectory "dirty" $ \tdir -> do
                         writeFile (tdir </> "foo.txt") "This is not T4 data"
