@@ -4,7 +4,7 @@ import T4.Data
 import T4.Storage
 import T4.Report
 import qualified Util as U
-import Data.List
+import qualified Data.Set as S
 import Data.Map
 import Data.Time
 import Options.Applicative
@@ -82,17 +82,18 @@ addClock clock = do
 
 handle :: Command -> IO ()
 handle (CmdIn c ts) = do  cslt <- U.getCurrentSLT
-                          addClock $ In cslt c ts
+                          addClock $ In cslt c (S.fromList ts)
 handle CmdOut       = do  cslt <- U.getCurrentSLT
                           addClock $ Out cslt
 handle CmdStatus    = do  clocks <- getClocks
-                          putStrLn $ case clocks of
-                            [] -> "No clock data yet"
-                            cs -> summary $ last cs
+                          putStrLn $
+                            if S.null clocks
+                              then "No clock data yet"
+                              else summary (S.findMax clocks)
 handle CmdCats      = do  clocks <- getClocks
-                          mapM_ putStrLn (sort $ allCategories clocks)
+                          mapM_ putStrLn $ allCategories clocks
 handle CmdTags      = do  clocks <- getClocks
-                          mapM_ putStrLn (sort $ allTags clocks)
+                          mapM_ putStrLn $ allTags clocks
 handle (CmdReport t obl man secs) = do
   clocks <- getClocks
   let durMap = (if t then tagDurations else categoryDurations) clocks
@@ -101,7 +102,7 @@ handle (CmdReport t obl man secs) = do
 printDurMap :: Bool -> Bool -> Bool -> Map String NominalDiffTime -> IO ()
 printDurMap o n s = mapM_ putStrLn . showDurMap o n s
 
-getClocks :: IO [Clock]
+getClocks :: IO Clocks
 getClocks = loadDataFromDir =<< getStorageDirectory
 
 main :: IO ()
