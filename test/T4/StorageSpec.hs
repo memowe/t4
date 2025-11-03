@@ -158,8 +158,8 @@ spec = do
           return (exists1, exists2, sd == sdName, isSD)
         checks `shouldBe` (False, True, True, True)
 
-      after_ (unsetEnv "T4DIR") $ -- because withEnv gets interrupted -- because withEnv gets interrupted
-         -- because withEnv gets interrupted
+      after_ (unsetEnv "T4DIR") $ -- because withEnv gets interrupted
+        
         it "Not a storage directory -> die" $ do
           let action = withSystemTempDirectory "dirty" $ \tdir -> do
                         writeFile (tdir </> "foo.txt") "This is not T4 data"
