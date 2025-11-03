@@ -49,7 +49,7 @@ spec = do
       withSystemTempDirectory "t4" $ \tdir -> do
         writeDataToDir tdir $ S.singleton clock
         filenames <- listDirectory tdir
-        return $ filenames === [fileName clock]
+        filenames `shouldBe` [fileName clock]
 
     prop "Same file => same day" $ \clocks ->
       not (null clocks) ==> ioProperty $ do
@@ -66,7 +66,7 @@ spec = do
       withSystemTempDirectory "t4" $ \tdir -> do
         writeDataToDir tdir clocks
         loaded <- loadDataFromDir tdir
-        return $ loaded `shouldBe` clocks
+        loaded `shouldBe` clocks
 
   context "Inserting single data into existing clock store" $ do
 
@@ -82,7 +82,7 @@ spec = do
       withSystemTempDirectory "t4-empty" $ \tdir -> do
         addClockToDir tdir clock
         loaded <- loadDataFromDir tdir
-        return $ loaded `shouldBe` S.singleton clock
+        loaded `shouldBe` S.singleton clock
 
     prop "Non-empty, different file" $ \(clocks, clock) ->
       not (null clocks) && getDay clock `notElem` S.map getDay clocks ==>
@@ -91,7 +91,7 @@ spec = do
             writeDataToDir tdir clocks
             addClockToDir tdir clock
             loaded <- loadDataFromDir tdir
-            return $ loaded `shouldBe` S.insert clock clocks
+            loaded `shouldBe` S.insert clock clocks
 
     prop "Non-empty, same file" $ \(clocks, clock) ->
       not (null clocks) && getDay clock `elem` S.map getDay clocks ==>
@@ -100,7 +100,7 @@ spec = do
             writeDataToDir tdir clocks
             addClockToDir tdir clock
             loaded <- loadDataFromDir tdir
-            return $ loaded `shouldBe` S.insert clock clocks
+            loaded `shouldBe` S.insert clock clocks
 
   context "Storage directory on disk" $ do
 
