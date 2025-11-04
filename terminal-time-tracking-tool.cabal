@@ -61,13 +61,19 @@ executable t4-api
   import:             basics
   default-extensions: DataKinds
                     , TypeOperators
+                    , FlexibleInstances
+  ghc-options:        -Wno-orphans
   build-depends:      terminal-time-tracking-tool
                     , servant-server
+                    , servant-openapi3
+                    , openapi3
+                    , servant-swagger-ui
                     , warp
+                    , lens
   hs-source-dirs:     exe-t4-api
   main-is:            API.hs
-  autogen-modules:    Paths_terminal_time_tracking_tool
   other-modules:      Paths_terminal_time_tracking_tool
+  autogen-modules:    Paths_terminal_time_tracking_tool
 
 test-suite library-test
   import:             basics

@@ -2,19 +2,44 @@ import T4.Data
 import T4.Storage
 import qualified Data.Set as S
 import Control.Monad.IO.Class
+import Control.Lens
+import Data.Aeson
 import Servant
+import Data.OpenApi hiding (Tag, Server, server)
+import Servant.OpenApi
+import Servant.Swagger.UI
 import Network.Wai.Handler.Warp
 import qualified Paths_terminal_time_tracking_tool as Paths
 
-type API = "api" :> T4API :<|> Raw
+instance ToSchema Clock where
+  declareNamedSchema _ = do
+    return $ NamedSchema (Just "Clock") $ mempty
+      & type_   ?~ OpenApiObject
+      & example ?~ toJSON clock
+    where clock = In  (SLT (read "2025-11-04 09:15:00"))
+                      (Just "T4 programming")
+                      (S.fromList ["backend", "api", "haskell"])
 
-type T4API  =                    Get '[JSON] (Maybe Clock) -- status
-          :<|>  "clocks"      :> Get '[JSON] [Clock]
-          :<|>  "categories"  :> Get '[JSON] [Category]
-          :<|>  "tags"        :> Get '[JSON] [Tag]
+t4OpenApi :: OpenApi
+t4OpenApi = toOpenApi (Proxy :: Proxy T4API)
+  & info . title        .~ "T4: Terminal Time Tracking Tool API"
+  & info . description  ?~ "Read-only API for T4 time tracking"
+
+type API  =   "api"           :> T4API
+        :<|>  "openapi.json"  :> Get '[JSON] OpenApi
+        :<|>  SwaggerSchemaUI "swagger-ui" "swagger.json"
+        :<|>  Raw
+
+type T4API  =                     Get '[JSON] (Maybe Clock)
+          :<|>  "clocks"      :>  Get '[JSON] [Clock]
+          :<|>  "categories"  :>  Get '[JSON] [Category]
+          :<|>  "tags"        :>  Get '[JSON] [Tag]
 
 server :: FilePath -> Server API
-server staticDir = apiServer :<|> serveDirectoryFileServer staticDir
+server staticDir  =   apiServer
+                :<|>  pure t4OpenApi
+                :<|>  swaggerSchemaUIServer t4OpenApi
+                :<|>  serveDirectoryFileServer staticDir
 
 apiServer :: Server T4API
 apiServer = getStatus
@@ -33,5 +58,9 @@ apiServer = getStatus
 main :: IO ()
 main = do
   staticDir <- Paths.getDataFileName "exe-t4-api/static"
-  putStrLn "Listening on http://localhost:8080..."
+  putStrLn "T4 API Server starting..."
+  putStrLn "  Listening on:     http://localhost:8080"
+  putStrLn "  OpenAPI spec at:  http://localhost:8080/openapi.json"
+  putStrLn "  Swagger UI at:    http://localhost:8080/swagger-ui"
+  putStrLn "  API endpoints:    http://localhost:8080/api/*"
   run 8080 $ serve (Proxy :: Proxy API) $ server staticDir
