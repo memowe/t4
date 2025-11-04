@@ -9,6 +9,7 @@ build-type:           Simple
 synopsis:             t4: terminal time tracking tool
 homepage:             https://github.com/memowe/t4
 bug-reports:          https://github.com/memowe/t4/issues
+data-files:           exe-t4-api/static/**/*
 
 source-repository head
   type:               git
@@ -55,6 +56,18 @@ executable t5
   build-depends:      terminal-time-tracking-tool
   hs-source-dirs:     exe-t5-interactive
   main-is:            TUI.hs
+
+executable t4-api
+  import:             basics
+  default-extensions: DataKinds
+                    , TypeOperators
+  build-depends:      terminal-time-tracking-tool
+                    , servant-server
+                    , warp
+  hs-source-dirs:     exe-t4-api
+  main-is:            API.hs
+  autogen-modules:    Paths_terminal_time_tracking_tool
+  other-modules:      Paths_terminal_time_tracking_tool
 
 test-suite library-test
   import:             basics
