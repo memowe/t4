@@ -25,7 +25,7 @@ t4OpenApi = toOpenApi (Proxy :: Proxy T4API)
   & info . title        .~ "T4: Terminal Time Tracking Tool API"
   & info . description  ?~ "Read-only API for T4 time tracking"
 
-type API  =   "api"           :> T4API
+type API  =   T4API
         :<|>  "openapi.json"  :> Get '[JSON] OpenApi
         :<|>  SwaggerSchemaUI "swagger-ui" "swagger.json"
         :<|>  Raw
@@ -59,8 +59,7 @@ main :: IO ()
 main = do
   staticDir <- Paths.getDataFileName "exe-t4-api/static"
   putStrLn "T4 API Server starting..."
-  putStrLn "  Listening on:     http://localhost:8080"
   putStrLn "  OpenAPI spec at:  http://localhost:8080/openapi.json"
   putStrLn "  Swagger UI at:    http://localhost:8080/swagger-ui"
-  putStrLn "  API endpoints:    http://localhost:8080/api/*"
+  putStrLn "  API endpoints:    http://localhost:8080/*"
   run 8080 $ serve (Proxy :: Proxy API) $ server staticDir
