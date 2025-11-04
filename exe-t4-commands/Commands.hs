@@ -1,5 +1,3 @@
-module Main where
-
 import T4.Data
 import T4.Storage
 import T4.Report
@@ -9,18 +7,12 @@ import Data.Map
 import Data.Time
 import Options.Applicative
 
-data Command  = CmdIn { ccat  :: Maybe Category
-                      , ctags :: [Tag]
-                      }
+data Command  = CmdIn (Maybe Category) [Tag]
               | CmdOut
               | CmdStatus
               | CmdCats
               | CmdTags
-              | CmdReport { crepTags  :: Bool
-                          , ordByLen  :: Bool
-                          , natDur    :: Bool
-                          , showSecs  :: Bool
-                          }
+              | CmdReport Bool Bool Bool Bool
 
 commandParser :: Parser Command
 commandParser = hsubparser
