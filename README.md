@@ -30,7 +30,7 @@ $ cat ~/.t4-data/2025-10-27.yml
     time: 2025-10-27 12:42:17
 ```
 
-The project offers two command-line interfaces to edit these files for you.
+The project offers two command-line interfaces to edit these files for you and one read-only web API for future report visualizations.
 
 ## Preparations
 
@@ -85,6 +85,18 @@ OUT (2025-10-27 10:29:12)
 ```
 
 *Hint*: the interactive TUI uses auto completion when entering categories or tags. Try it using <kbd>Tab</kbd>.
+
+## JSON web API `t4-api`
+
+This simple JSON API is a preparation for pretty report visualizations. Access it for now via cabal and inspect its swagger UI for details.
+
+```
+$ cabal run t4-api
+T4 API Server starting...
+  OpenAPI spec at:  http://localhost:8080/openapi.json
+  Swagger UI at:    http://localhost:8080/swagger-ui
+  API endpoints:    http://localhost:8080/*
+```
 
 ## Author and license
 
