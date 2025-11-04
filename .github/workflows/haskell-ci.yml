@@ -5,6 +5,7 @@ jobs:
   build_test_doc:
     runs-on: ubuntu-latest
     steps:
+      - run: sudo apt install -y liblzma-dev pkg-config
       - uses: actions/checkout@v4
       - uses: haskell-actions/setup@v2
         id: setup
